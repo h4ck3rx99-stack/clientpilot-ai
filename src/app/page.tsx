@@ -38,12 +38,26 @@ export default function Home() {
           </div>
           <span className="text-sm font-semibold">ClientPilot AI</span>
         </div>
-        <Link
-          href="/dashboard"
-          className="text-sm text-zinc-400 hover:text-white transition-colors"
-        >
-          Dashboard
-        </Link>
+        <nav className="flex items-center gap-6 text-sm">
+          <Link
+            href="/dashboard"
+            className="text-zinc-400 hover:text-white transition-colors"
+          >
+            Dashboard
+          </Link>
+          <Link
+            href="/profile"
+            className="text-zinc-400 hover:text-white transition-colors"
+          >
+            Profile
+          </Link>
+          <Link
+            href="/campaigns/new"
+            className="text-zinc-400 hover:text-white transition-colors"
+          >
+            New Campaign
+          </Link>
+        </nav>
       </header>
 
       <main className="flex-1 flex flex-col">

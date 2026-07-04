@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import ProfileSummaryCard from "@/components/profile-summary-card";
 
 async function getMetrics() {
   const [totalCampaigns, totalLeads, emailsQueued, emailsSent] =
@@ -35,10 +36,12 @@ export default async function DashboardPage() {
     <>
       <header className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
         <div className="flex items-center gap-2">
-          <div className="size-7 rounded-lg bg-indigo-500 flex items-center justify-center text-xs font-bold text-white">
-            CP
-          </div>
-          <span className="text-sm font-semibold">ClientPilot AI</span>
+          <Link href="/" className="flex items-center gap-2">
+            <div className="size-7 rounded-lg bg-indigo-500 flex items-center justify-center text-xs font-bold text-white">
+              CP
+            </div>
+            <span className="text-sm font-semibold">ClientPilot AI</span>
+          </Link>
         </div>
         <nav className="flex items-center gap-6 text-sm">
           <Link
@@ -46,6 +49,12 @@ export default async function DashboardPage() {
             className="text-white font-medium"
           >
             Dashboard
+          </Link>
+          <Link
+            href="/profile"
+            className="text-zinc-400 hover:text-white transition-colors"
+          >
+            Profile
           </Link>
           <Link
             href="/campaigns/new"
@@ -59,7 +68,7 @@ export default async function DashboardPage() {
       <main className="flex-1 px-6 py-8 max-w-5xl mx-auto w-full">
         <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {cards.map((card) => (
             <div
               key={card.label}
@@ -72,6 +81,11 @@ export default async function DashboardPage() {
             </div>
           ))}
         </div>
+
+        <section className="mb-10">
+          <h2 className="text-lg font-semibold mb-3">Profile</h2>
+          <ProfileSummaryCard />
+        </section>
 
         <section>
           <h2 className="text-lg font-semibold mb-4">Recent campaigns</h2>
