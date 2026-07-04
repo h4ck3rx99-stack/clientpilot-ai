@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 import { getCampaignById } from "@/lib/campaigns";
 import { getLeadsByCampaignId, getLeadCountForCampaign } from "@/lib/leads";
 import LeadTable from "@/components/lead-table";
@@ -16,8 +17,12 @@ export default async function CampaignLeadsPage({
   const campaign = await getCampaignById(id);
   if (!campaign) notFound();
 
-  const leads = await getLeadsByCampaignId(id);
-  const count = await getLeadCountForCampaign(id);
+  const [leads, count, unsubscribed] = await Promise.all([
+    getLeadsByCampaignId(id),
+    getLeadCountForCampaign(id),
+    prisma.unsubscribe.findMany({ select: { email: true } }),
+  ]);
+  const unsubscribedEmails = unsubscribed.map((u) => u.email);
 
   return (
     <>
@@ -35,6 +40,7 @@ export default async function CampaignLeadsPage({
           <Link href="/profile" className="text-zinc-400 hover:text-white transition-colors">Profile</Link>
           <Link href="/campaigns" className="text-zinc-400 hover:text-white transition-colors">Campaigns</Link>
           <Link href="/campaigns/new" className="text-zinc-400 hover:text-white transition-colors">New Campaign</Link>
+          <Link href="/unsubscribes" className="text-zinc-400 hover:text-white transition-colors">Unsubscribes</Link>
         </nav>
       </header>
 
@@ -90,7 +96,7 @@ export default async function CampaignLeadsPage({
           />
         ) : (
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-            <LeadTable campaignId={id} leads={leads} />
+            <LeadTable campaignId={id} leads={leads} unsubscribedEmails={unsubscribedEmails} />
           </div>
         )}
       </main>

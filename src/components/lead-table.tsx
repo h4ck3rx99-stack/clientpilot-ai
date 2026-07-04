@@ -19,9 +19,11 @@ type Lead = {
 export default function LeadTable({
   campaignId,
   leads,
+  unsubscribedEmails = [],
 }: {
   campaignId: string;
   leads: Lead[];
+  unsubscribedEmails?: string[];
 }) {
   return (
     <div className="overflow-x-auto">
@@ -42,7 +44,14 @@ export default function LeadTable({
           {leads.map((lead) => (
             <tr key={lead.id} className="border-b border-zinc-800/50 last:border-0">
               <td className="py-3 pr-4 text-white font-medium">
-                {lead.companyName}
+                <div className="flex items-center gap-2">
+                  {lead.companyName}
+                  {lead.email && unsubscribedEmails.includes(lead.email) && (
+                    <span className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-800/50 px-2 py-0.5 text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
+                      Unsubscribed
+                    </span>
+                  )}
+                </div>
               </td>
               <td className="py-3 pr-4 text-zinc-400 max-w-[140px] truncate">
                 {lead.website && (

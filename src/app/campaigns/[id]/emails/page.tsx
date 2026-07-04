@@ -5,8 +5,10 @@ import {
   getEmailDraftsByCampaignId,
   getEmailDraftStatsForCampaign,
 } from "@/lib/email-drafts";
+import { getTodaySendCountForCampaign } from "@/lib/sending";
 import EmailDraftCard from "@/components/email-draft-card";
 import { GenerateDraftsAllButton } from "@/components/generate-draft-buttons";
+import SimulatedSendCard from "@/components/simulated-send-card";
 import EmptyState from "@/components/empty-state";
 
 export default async function EmailQueuePage({
@@ -21,9 +23,10 @@ export default async function EmailQueuePage({
   });
   if (!campaign) notFound();
 
-  const [drafts, stats] = await Promise.all([
+  const [drafts, stats, sentToday] = await Promise.all([
     getEmailDraftsByCampaignId(campaignId),
     getEmailDraftStatsForCampaign(campaignId),
+    getTodaySendCountForCampaign(campaignId),
   ]);
 
   return (
@@ -39,16 +42,32 @@ export default async function EmailQueuePage({
             </Link>
             <h1 className="text-lg font-semibold mt-1">Email Queue</h1>
           </div>
-          <Link
-            href={`/campaigns/${campaignId}/leads`}
-            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-          >
-            &larr; Leads
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href={`/campaigns/${campaignId}/send-history`}
+              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              Send History
+            </Link>
+            <Link
+              href={`/campaigns/${campaignId}/leads`}
+              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              &larr; Leads
+            </Link>
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-8 space-y-8">
+        <SimulatedSendCard
+          campaignId={campaignId}
+          campaignStatus={campaign.status}
+          dailySendLimit={campaign.dailySendLimit}
+          sentToday={sentToday}
+          queuedCount={stats.queued}
+        />
+
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
           {[
             { label: "Total", value: stats.total, color: "text-white" },

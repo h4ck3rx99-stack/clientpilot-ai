@@ -62,6 +62,12 @@ export default async function EditCampaignPage({
           >
             New Campaign
           </Link>
+          <Link
+            href="/unsubscribes"
+            className="text-zinc-400 hover:text-white transition-colors"
+          >
+            Unsubscribes
+          </Link>
         </nav>
       </header>
 

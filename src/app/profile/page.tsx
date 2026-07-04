@@ -39,6 +39,12 @@ export default async function ProfilePage() {
           >
             New Campaign
           </Link>
+          <Link
+            href="/unsubscribes"
+            className="text-zinc-400 hover:text-white transition-colors"
+          >
+            Unsubscribes
+          </Link>
         </nav>
       </header>
 

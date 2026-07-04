@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCampaignById } from "@/lib/campaigns";
 import { getLeadCountForCampaign, getRecentLeadsForCampaign } from "@/lib/leads";
 import { getEmailDraftStatsForCampaign } from "@/lib/email-drafts";
+import { getTodaySendCountForCampaign } from "@/lib/sending";
 import StatusBadge from "@/components/status-badge";
 import FitScoreBadge from "@/components/fit-score-badge";
 import CampaignControls from "./campaign-controls";
@@ -14,7 +15,7 @@ export default async function CampaignDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [campaign, leadCount, recentLeads, leadStats, emailStats] =
+  const [campaign, leadCount, recentLeads, leadStats, emailStats, sentToday] =
     await Promise.all([
       getCampaignById(id),
       getLeadCountForCampaign(id),
@@ -24,6 +25,7 @@ export default async function CampaignDetailPage({
         _avg: { fitScore: true },
       }),
       getEmailDraftStatsForCampaign(id),
+      getTodaySendCountForCampaign(id),
     ]);
 
   const analyzedCount = await prisma.lead.count({
@@ -85,6 +87,12 @@ export default async function CampaignDetailPage({
             className="text-zinc-400 hover:text-white transition-colors"
           >
             New Campaign
+          </Link>
+          <Link
+            href="/unsubscribes"
+            className="text-zinc-400 hover:text-white transition-colors"
+          >
+            Unsubscribes
           </Link>
         </nav>
       </header>
@@ -226,47 +234,60 @@ export default async function CampaignDetailPage({
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-white">
-              Email Queue ({emailStats.total})
+              Email ({emailStats.total} drafts)
             </h2>
-            <Link
-              href={`/campaigns/${campaign.id}/emails`}
-              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-            >
-              View Queue
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/campaigns/${campaign.id}/send-history`}
+                className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                Send History
+              </Link>
+              <Link
+                href={`/campaigns/${campaign.id}/emails`}
+                className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                Review Queue
+              </Link>
+            </div>
           </div>
 
-          {emailStats.total > 0 && (
-            <div className="grid grid-cols-4 gap-3 mb-4">
-              <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
-                <p className="text-xs text-zinc-500">Draft</p>
-                <p className="text-lg font-semibold text-yellow-400">{emailStats.draft}</p>
-              </div>
-              <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
-                <p className="text-xs text-zinc-500">Queued</p>
-                <p className="text-lg font-semibold text-blue-400">{emailStats.queued}</p>
-              </div>
-              <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
-                <p className="text-xs text-zinc-500">Sent</p>
-                <p className="text-lg font-semibold text-green-400">{emailStats.sent}</p>
-              </div>
-              <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
-                <p className="text-xs text-zinc-500">Cancelled</p>
-                <p className="text-lg font-semibold text-zinc-400">{emailStats.cancelled}</p>
-              </div>
+          <div className="grid grid-cols-4 gap-3 mb-4">
+            <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <p className="text-xs text-zinc-500">Draft</p>
+              <p className="text-lg font-semibold text-yellow-400">{emailStats.draft}</p>
             </div>
-          )}
+            <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <p className="text-xs text-zinc-500">Queued</p>
+              <p className="text-lg font-semibold text-blue-400">{emailStats.queued}</p>
+            </div>
+            <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <p className="text-xs text-zinc-500">Sent</p>
+              <p className="text-lg font-semibold text-green-400">{emailStats.sent}</p>
+            </div>
+            <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <p className="text-xs text-zinc-500">Cancelled</p>
+              <p className="text-lg font-semibold text-zinc-400">{emailStats.cancelled}</p>
+            </div>
+          </div>
 
-          {emailStats.total === 0 && (
-            <>
-              <p className="text-sm text-zinc-500">
-                No email drafts queued yet.
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <p className="text-xs text-zinc-500">Sent Today</p>
+              <p className="text-lg font-semibold text-blue-400">{sentToday}</p>
+            </div>
+            <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <p className="text-xs text-zinc-500">Remaining / Limit</p>
+              <p className="text-lg font-semibold text-white">
+                {Math.max(0, campaign.dailySendLimit - sentToday)} / {campaign.dailySendLimit}
               </p>
-              <p className="text-xs text-zinc-600 mt-1">
-                After leads are analyzed, personalized emails will appear here
-                for review.
-              </p>
-            </>
+            </div>
+          </div>
+
+          {campaign.status !== "ACTIVE" && emailStats.queued > 0 && (
+            <p className="text-xs text-yellow-400 mt-3">
+              Emails only send when campaign status is ACTIVE.
+            </p>
           )}
         </div>
       </main>

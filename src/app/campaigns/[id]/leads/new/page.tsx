@@ -28,6 +28,7 @@ export default async function AddLeadPage({
           <Link href="/profile" className="text-zinc-400 hover:text-white transition-colors">Profile</Link>
           <Link href="/campaigns" className="text-zinc-400 hover:text-white transition-colors">Campaigns</Link>
           <Link href="/campaigns/new" className="text-zinc-400 hover:text-white transition-colors">New Campaign</Link>
+          <Link href="/unsubscribes" className="text-zinc-400 hover:text-white transition-colors">Unsubscribes</Link>
         </nav>
       </header>
 
