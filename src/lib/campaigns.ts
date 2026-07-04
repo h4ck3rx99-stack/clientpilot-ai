@@ -75,13 +75,14 @@ export async function getRecentCampaigns(limit = 5) {
 }
 
 export async function getDashboardMetrics() {
-  const [totalCampaigns, totalLeads, emailsQueued, emailsSent] =
+  const [totalCampaigns, totalLeads, emailsQueued, emailsSent, highFitLeads] =
     await Promise.all([
       prisma.campaign.count(),
       prisma.lead.count(),
       prisma.emailDraft.count({ where: { status: "QUEUED" } }),
       prisma.emailDraft.count({ where: { status: "SENT" } }),
+      prisma.lead.count({ where: { status: "ANALYZED", fitScore: { gte: 75 } } }),
     ]);
 
-  return { totalCampaigns, totalLeads, emailsQueued, emailsSent };
+  return { totalCampaigns, totalLeads, emailsQueued, emailsSent, highFitLeads };
 }

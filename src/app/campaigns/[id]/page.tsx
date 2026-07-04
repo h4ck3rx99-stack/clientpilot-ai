@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 import { getCampaignById } from "@/lib/campaigns";
 import { getLeadCountForCampaign, getRecentLeadsForCampaign } from "@/lib/leads";
 import StatusBadge from "@/components/status-badge";
+import FitScoreBadge from "@/components/fit-score-badge";
 import CampaignControls from "./campaign-controls";
 
 export default async function CampaignDetailPage({
@@ -11,11 +13,23 @@ export default async function CampaignDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [campaign, leadCount, recentLeads] = await Promise.all([
+  const [campaign, leadCount, recentLeads, leadStats] = await Promise.all([
     getCampaignById(id),
     getLeadCountForCampaign(id),
     getRecentLeadsForCampaign(id, 5),
+    prisma.lead.aggregate({
+      where: { campaignId: id },
+      _avg: { fitScore: true },
+    }),
   ]);
+
+  const analyzedCount = await prisma.lead.count({
+    where: { campaignId: id, status: "ANALYZED" },
+  });
+  const rejectedCount = await prisma.lead.count({
+    where: { campaignId: id, status: "REJECTED" },
+  });
+  const avgFit = leadStats._avg.fitScore ?? 0;
 
   if (!campaign) {
     notFound();
@@ -149,6 +163,24 @@ export default async function CampaignDetailPage({
               Manage Leads
             </Link>
           </div>
+
+          {leadCount > 0 && (
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
+                <p className="text-xs text-zinc-500">Analyzed</p>
+                <p className="text-lg font-semibold text-green-400">{analyzedCount}</p>
+              </div>
+              <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
+                <p className="text-xs text-zinc-500">Rejected</p>
+                <p className="text-lg font-semibold text-zinc-400">{rejectedCount}</p>
+              </div>
+              <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
+                <p className="text-xs text-zinc-500">Avg Score</p>
+                <p className="text-lg font-semibold text-white">{Math.round(avgFit)}</p>
+              </div>
+            </div>
+          )}
+
           {leadCount === 0 ? (
             <p className="text-sm text-zinc-500 mb-4">No leads added yet.</p>
           ) : (
@@ -160,17 +192,7 @@ export default async function CampaignDetailPage({
                 >
                   <span className="text-zinc-300">{l.companyName}</span>
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                        l.fitScore >= 70
-                          ? "text-green-400 bg-green-950/50"
-                          : l.fitScore >= 40
-                          ? "text-amber-400 bg-amber-950/50"
-                          : "text-zinc-500 bg-zinc-800/50"
-                      }`}
-                    >
-                      {l.fitScore}
-                    </span>
+                    <FitScoreBadge score={l.fitScore} />
                     <StatusBadge status={l.status} />
                   </div>
                 </div>

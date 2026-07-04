@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCampaignById } from "@/lib/campaigns";
-import { getLeadsByCampaignId } from "@/lib/leads";
+import { getLeadsByCampaignId, getLeadCountForCampaign } from "@/lib/leads";
 import LeadTable from "@/components/lead-table";
 import EmptyState from "@/components/empty-state";
+import { AnalyzeAllButton } from "@/components/analyze-buttons";
 
 export default async function CampaignLeadsPage({
   params,
@@ -15,6 +16,7 @@ export default async function CampaignLeadsPage({
   if (!campaign) notFound();
 
   const leads = await getLeadsByCampaignId(id);
+  const count = await getLeadCountForCampaign(id);
 
   return (
     <>
@@ -45,12 +47,13 @@ export default async function CampaignLeadsPage({
 
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Leads</h1>
+            <h1 className="text-2xl font-bold">Leads ({count})</h1>
             <p className="text-sm text-zinc-500 mt-1">
               Review business contacts added to this campaign before AI analysis.
             </p>
           </div>
           <div className="flex gap-3">
+            {count > 0 && <AnalyzeAllButton campaignId={id} />}
             <Link
               href={`/campaigns/${id}/leads/new`}
               className="inline-flex h-10 items-center justify-center rounded-lg bg-indigo-500 px-5 text-sm font-medium text-white hover:bg-indigo-400 transition-colors"

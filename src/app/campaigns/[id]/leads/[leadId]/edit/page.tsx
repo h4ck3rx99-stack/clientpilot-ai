@@ -3,6 +3,11 @@ import Link from "next/link";
 import { getCampaignById } from "@/lib/campaigns";
 import { getLeadById } from "@/lib/leads";
 import LeadForm from "@/components/lead-form";
+import FitScoreBadge from "@/components/fit-score-badge";
+import StatusBadge from "@/components/status-badge";
+import ScoreBreakdownCard from "@/components/score-breakdown-card";
+import { ReanalyzeButton } from "./reanalyze-button";
+import type { ScoreBreakdown } from "@/lib/scoring";
 
 export default async function EditLeadPage({
   params,
@@ -16,6 +21,15 @@ export default async function EditLeadPage({
   ]);
 
   if (!campaign || !lead) notFound();
+
+  let parsedBreakdown: ScoreBreakdown | null = null;
+  if (lead.scoreBreakdown) {
+    try {
+      parsedBreakdown = JSON.parse(lead.scoreBreakdown);
+    } catch {
+      parsedBreakdown = null;
+    }
+  }
 
   return (
     <>
@@ -47,6 +61,57 @@ export default async function EditLeadPage({
         <p className="text-sm text-zinc-500 mb-6">
           Update contact information for {lead.companyName}.
         </p>
+
+        {parsedBreakdown && lead.fitScore > 0 && (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-white">
+                Analysis Summary
+              </h2>
+              <ReanalyzeButton leadId={lead.id} />
+            </div>
+            <div className="flex items-center gap-3 mb-4">
+              <FitScoreBadge score={lead.fitScore} />
+              <StatusBadge status={lead.status} />
+            </div>
+            <div className="space-y-3 text-sm mb-4">
+              {lead.industry && (
+                <div>
+                  <span className="text-zinc-500 text-xs block mb-0.5">Industry</span>
+                  <span className="text-white">{lead.industry}</span>
+                </div>
+              )}
+              {lead.painPoint && (
+                <div>
+                  <span className="text-zinc-500 text-xs block mb-0.5">Pain point</span>
+                  <span className="text-zinc-300">{lead.painPoint}</span>
+                </div>
+              )}
+              {lead.offerAngle && (
+                <div>
+                  <span className="text-zinc-500 text-xs block mb-0.5">Offer angle</span>
+                  <span className="text-zinc-300">{lead.offerAngle}</span>
+                </div>
+              )}
+              {lead.personalizationLine && (
+                <div>
+                  <span className="text-zinc-500 text-xs block mb-0.5">Personalization</span>
+                  <span className="text-zinc-300">{lead.personalizationLine}</span>
+                </div>
+              )}
+            </div>
+            <ScoreBreakdownCard breakdown={parsedBreakdown} />
+          </div>
+        )}
+
+        {(!parsedBreakdown || lead.fitScore === 0) && (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 mb-6 flex items-center justify-between">
+            <p className="text-sm text-zinc-500">
+              This lead has not been analyzed yet.
+            </p>
+            <ReanalyzeButton leadId={lead.id} />
+          </div>
+        )}
 
         <LeadForm
           campaignId={id}

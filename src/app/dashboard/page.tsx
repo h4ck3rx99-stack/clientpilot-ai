@@ -11,8 +11,8 @@ export default async function DashboardPage() {
   const cards = [
     { label: "Total campaigns", value: metrics.totalCampaigns },
     { label: "Total leads", value: metrics.totalLeads },
+    { label: "High-fit leads", value: metrics.highFitLeads },
     { label: "Emails queued", value: metrics.emailsQueued },
-    { label: "Emails sent", value: metrics.emailsSent },
   ];
 
   return (

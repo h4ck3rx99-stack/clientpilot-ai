@@ -49,6 +49,7 @@ model Lead {
   offerAngle          String?
   personalizationLine String?
   fitScore            Int      @default(0)
+  scoreBreakdown      String?
   status              String   @default("NEW")
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt

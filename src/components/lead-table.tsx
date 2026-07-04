@@ -1,5 +1,7 @@
 import Link from "next/link";
 import StatusBadge from "./status-badge";
+import { AnalyzeLeadButton } from "./analyze-buttons";
+import FitScoreBadge from "./fit-score-badge";
 
 type Lead = {
   id: string;
@@ -32,7 +34,7 @@ export default function LeadTable({
             <th className="pb-3 pr-4 font-medium">Score</th>
             <th className="pb-3 pr-4 font-medium">Status</th>
             <th className="pb-3 pr-4 font-medium">Created</th>
-            <th className="pb-3 font-medium" />
+            <th className="pb-3 pr-3 font-medium">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -41,7 +43,7 @@ export default function LeadTable({
               <td className="py-3 pr-4 text-white font-medium">
                 {lead.companyName}
               </td>
-              <td className="py-3 pr-4 text-zinc-400 max-w-[160px] truncate">
+              <td className="py-3 pr-4 text-zinc-400 max-w-[140px] truncate">
                 {lead.website && (
                   <a
                     href={lead.website}
@@ -53,20 +55,14 @@ export default function LeadTable({
                   </a>
                 )}
               </td>
-              <td className="py-3 pr-4 text-zinc-400">{lead.email}</td>
+              <td className="py-3 pr-4 text-zinc-400 max-w-[140px] truncate">{lead.email}</td>
               <td className="py-3 pr-4 text-zinc-400">{lead.industry || "—"}</td>
               <td className="py-3 pr-4">
-                <span
-                  className={`inline-block text-xs font-medium px-2 py-0.5 rounded ${
-                    lead.fitScore >= 70
-                      ? "text-green-400 bg-green-950/50"
-                      : lead.fitScore >= 40
-                      ? "text-amber-400 bg-amber-950/50"
-                      : "text-zinc-400 bg-zinc-800/50"
-                  }`}
-                >
-                  {lead.fitScore}
-                </span>
+                {lead.fitScore > 0 ? (
+                  <FitScoreBadge score={lead.fitScore} />
+                ) : (
+                  <span className="text-xs text-zinc-600">—</span>
+                )}
               </td>
               <td className="py-3 pr-4">
                 <StatusBadge status={lead.status} />
@@ -78,12 +74,15 @@ export default function LeadTable({
                 })}
               </td>
               <td className="py-3">
-                <Link
-                  href={`/campaigns/${campaignId}/leads/${lead.id}/edit`}
-                  className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-                >
-                  Edit
-                </Link>
+                <div className="flex flex-col gap-1">
+                  <AnalyzeLeadButton leadId={lead.id} />
+                  <Link
+                    href={`/campaigns/${campaignId}/leads/${lead.id}/edit`}
+                    className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                  >
+                    Edit
+                  </Link>
+                </div>
               </td>
             </tr>
           ))}

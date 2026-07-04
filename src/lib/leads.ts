@@ -10,6 +10,7 @@ export type LeadInput = {
   offerAngle?: string;
   personalizationLine?: string;
   fitScore?: number;
+  scoreBreakdown?: string;
   status?: string;
 };
 
@@ -45,6 +46,7 @@ export async function createLead(campaignId: string, data: LeadInput) {
       offerAngle: data.offerAngle ?? null,
       personalizationLine: data.personalizationLine ?? null,
       fitScore: data.fitScore ?? 0,
+      scoreBreakdown: data.scoreBreakdown ?? null,
       status: data.status ?? "NEW",
     },
   });
@@ -63,6 +65,7 @@ export async function updateLead(id: string, data: LeadInput) {
       offerAngle: data.offerAngle ?? null,
       personalizationLine: data.personalizationLine ?? null,
       fitScore: data.fitScore ?? 0,
+      scoreBreakdown: data.scoreBreakdown ?? undefined,
       status: data.status ?? undefined,
     },
   });
