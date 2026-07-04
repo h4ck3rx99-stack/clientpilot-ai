@@ -5,6 +5,7 @@ import { getLeadsByCampaignId, getLeadCountForCampaign } from "@/lib/leads";
 import LeadTable from "@/components/lead-table";
 import EmptyState from "@/components/empty-state";
 import { AnalyzeAllButton } from "@/components/analyze-buttons";
+import { GenerateDraftsAllButton } from "@/components/generate-draft-buttons";
 
 export default async function CampaignLeadsPage({
   params,
@@ -54,6 +55,7 @@ export default async function CampaignLeadsPage({
           </div>
           <div className="flex gap-3">
             {count > 0 && <AnalyzeAllButton campaignId={id} />}
+            <GenerateDraftsAllButton campaignId={id} />
             <Link
               href={`/campaigns/${id}/leads/new`}
               className="inline-flex h-10 items-center justify-center rounded-lg bg-indigo-500 px-5 text-sm font-medium text-white hover:bg-indigo-400 transition-colors"

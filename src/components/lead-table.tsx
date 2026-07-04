@@ -1,6 +1,7 @@
 import Link from "next/link";
 import StatusBadge from "./status-badge";
 import { AnalyzeLeadButton } from "./analyze-buttons";
+import { GenerateDraftButton } from "./generate-draft-buttons";
 import FitScoreBadge from "./fit-score-badge";
 
 type Lead = {
@@ -76,6 +77,12 @@ export default function LeadTable({
               <td className="py-3">
                 <div className="flex flex-col gap-1">
                   <AnalyzeLeadButton leadId={lead.id} />
+                  {lead.status === "ANALYZED" && lead.fitScore >= 50 && (
+                    <GenerateDraftButton
+                      leadId={lead.id}
+                      campaignId={campaignId}
+                    />
+                  )}
                   <Link
                     href={`/campaigns/${campaignId}/leads/${lead.id}/edit`}
                     className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"

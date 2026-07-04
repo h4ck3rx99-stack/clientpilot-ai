@@ -12,7 +12,7 @@ export default async function DashboardPage() {
     { label: "Total campaigns", value: metrics.totalCampaigns },
     { label: "Total leads", value: metrics.totalLeads },
     { label: "High-fit leads", value: metrics.highFitLeads },
-    { label: "Emails queued", value: metrics.emailsQueued },
+    { label: "Drafts pending", value: metrics.draftsPending },
   ];
 
   return (
