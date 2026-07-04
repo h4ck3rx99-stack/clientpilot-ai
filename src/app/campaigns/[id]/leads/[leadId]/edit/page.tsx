@@ -1,8 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 import { getCampaignById } from "@/lib/campaigns";
 import { getLeadById } from "@/lib/leads";
+import { getLeadActivities } from "@/lib/lead-activity";
 import LeadForm from "@/components/lead-form";
+import LeadManageForm from "@/components/lead-manage-form";
+import ActivityTimeline from "@/components/activity-timeline";
 import FitScoreBadge from "@/components/fit-score-badge";
 import StatusBadge from "@/components/status-badge";
 import ScoreBreakdownCard from "@/components/score-breakdown-card";
@@ -31,6 +35,8 @@ export default async function EditLeadPage({
     }
   }
 
+  const activities = await getLeadActivities(leadId);
+
   return (
     <>
       <header className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
@@ -51,16 +57,16 @@ export default async function EditLeadPage({
         </nav>
       </header>
 
-      <main className="flex-1 px-6 py-8 max-w-2xl mx-auto w-full">
+      <main className="flex-1 px-6 py-8 max-w-4xl mx-auto w-full">
         <Link
           href={`/campaigns/${id}/leads`}
           className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-1 block"
         >
           &larr; Back to leads
         </Link>
-        <h1 className="text-2xl font-bold mb-1">Edit Lead</h1>
+        <h1 className="text-2xl font-bold mb-1">{lead.companyName}</h1>
         <p className="text-sm text-zinc-500 mb-6">
-          Update contact information for {lead.companyName}.
+          Update contact info, pipeline status, notes, and follow-up.
         </p>
 
         {parsedBreakdown && lead.fitScore > 0 && (
@@ -74,6 +80,7 @@ export default async function EditLeadPage({
             <div className="flex items-center gap-3 mb-4">
               <FitScoreBadge score={lead.fitScore} />
               <StatusBadge status={lead.status} />
+              <StatusBadge status={lead.pipelineStatus} />
             </div>
             <div className="space-y-3 text-sm mb-4">
               {lead.industry && (
@@ -114,22 +121,58 @@ export default async function EditLeadPage({
           </div>
         )}
 
-        <LeadForm
-          campaignId={id}
-          lead={{
-            id: lead.id,
-            companyName: lead.companyName,
-            website: lead.website ?? undefined,
-            email: lead.email ?? undefined,
-            sourceUrl: lead.sourceUrl ?? undefined,
-            industry: lead.industry ?? undefined,
-            painPoint: lead.painPoint ?? undefined,
-            offerAngle: lead.offerAngle ?? undefined,
-            personalizationLine: lead.personalizationLine ?? undefined,
-            fitScore: lead.fitScore,
-            status: lead.status,
-          }}
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+            <h2 className="text-sm font-semibold text-white mb-4">
+              Pipeline &amp; Notes
+            </h2>
+            <LeadManageForm
+              leadId={lead.id}
+              campaignId={id}
+              initial={{
+                pipelineStatus: lead.pipelineStatus,
+                notes: lead.notes,
+                nextFollowUpAt: lead.nextFollowUpAt
+                  ? new Date(
+                      lead.nextFollowUpAt.getTime() -
+                        lead.nextFollowUpAt.getTimezoneOffset() * 60000
+                    )
+                      .toISOString()
+                      .slice(0, 16)
+                  : null,
+              }}
+            />
+          </div>
+
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+            <h2 className="text-sm font-semibold text-white mb-4">
+              Activity Timeline
+            </h2>
+            <ActivityTimeline activities={activities} />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+          <h2 className="text-sm font-semibold text-white mb-4">
+            Contact Info
+          </h2>
+          <LeadForm
+            campaignId={id}
+            lead={{
+              id: lead.id,
+              companyName: lead.companyName,
+              website: lead.website ?? undefined,
+              email: lead.email ?? undefined,
+              sourceUrl: lead.sourceUrl ?? undefined,
+              industry: lead.industry ?? undefined,
+              painPoint: lead.painPoint ?? undefined,
+              offerAngle: lead.offerAngle ?? undefined,
+              personalizationLine: lead.personalizationLine ?? undefined,
+              fitScore: lead.fitScore,
+              status: lead.status,
+            }}
+          />
+        </div>
       </main>
     </>
   );

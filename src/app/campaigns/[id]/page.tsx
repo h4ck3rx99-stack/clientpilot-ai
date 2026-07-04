@@ -36,6 +36,31 @@ export default async function CampaignDetailPage({
   });
   const avgFit = leadStats._avg.fitScore ?? 0;
 
+  const pipelineStats = {
+    contacted: await prisma.lead.count({
+      where: { campaignId: id, pipelineStatus: { not: "NOT_CONTACTED" } },
+    }),
+    replied: await prisma.lead.count({
+      where: { campaignId: id, pipelineStatus: "REPLIED" },
+    }),
+    interested: await prisma.lead.count({
+      where: { campaignId: id, pipelineStatus: "INTERESTED" },
+    }),
+    meetings: await prisma.lead.count({
+      where: { campaignId: id, pipelineStatus: "MEETING_BOOKED" },
+    }),
+    won: await prisma.lead.count({
+      where: { campaignId: id, pipelineStatus: "WON" },
+    }),
+    followUpsDue: await prisma.lead.count({
+      where: {
+        campaignId: id,
+        nextFollowUpAt: { lte: new Date() },
+        pipelineStatus: { in: ["FOLLOW_UP", "INTERESTED", "REPLIED"] },
+      },
+    }),
+  };
+
   if (!campaign) {
     notFound();
   }
@@ -165,6 +190,47 @@ export default async function CampaignDetailPage({
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-white">
+              Pipeline Preview
+            </h2>
+            <Link
+              href={`/campaigns/${campaign.id}/pipeline`}
+              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              Open Pipeline
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            <div className="rounded-lg bg-zinc-800/50 p-2.5 text-center">
+              <p className="text-sm font-bold text-blue-400">{pipelineStats.contacted}</p>
+              <p className="text-[10px] text-zinc-500">Contacted</p>
+            </div>
+            <div className="rounded-lg bg-zinc-800/50 p-2.5 text-center">
+              <p className="text-sm font-bold text-green-400">{pipelineStats.replied}</p>
+              <p className="text-[10px] text-zinc-500">Replied</p>
+            </div>
+            <div className="rounded-lg bg-zinc-800/50 p-2.5 text-center">
+              <p className="text-sm font-bold text-purple-400">{pipelineStats.interested}</p>
+              <p className="text-[10px] text-zinc-500">Interested</p>
+            </div>
+            <div className="rounded-lg bg-zinc-800/50 p-2.5 text-center">
+              <p className="text-sm font-bold text-yellow-400">{pipelineStats.meetings}</p>
+              <p className="text-[10px] text-zinc-500">Meetings</p>
+            </div>
+            <div className="rounded-lg bg-zinc-800/50 p-2.5 text-center">
+              <p className="text-sm font-bold text-emerald-400">{pipelineStats.won}</p>
+              <p className="text-[10px] text-zinc-500">Won</p>
+            </div>
+            <div className="rounded-lg bg-zinc-800/50 p-2.5 text-center">
+              <p className="text-sm font-bold text-rose-400">{pipelineStats.followUpsDue}</p>
+              <p className="text-[10px] text-zinc-500">Follow-ups Due</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-white">
               Leads ({leadCount})
             </h2>
             <Link
@@ -237,6 +303,12 @@ export default async function CampaignDetailPage({
               Email ({emailStats.total} drafts)
             </h2>
             <div className="flex items-center gap-3">
+              <Link
+                href={`/campaigns/${campaign.id}/pipeline`}
+                className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                Pipeline
+              </Link>
               <Link
                 href={`/campaigns/${campaign.id}/send-history`}
                 className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"

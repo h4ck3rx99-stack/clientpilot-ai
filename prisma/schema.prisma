@@ -21,26 +21,27 @@ model UserProfile {
 }
 
 model Campaign {
-  id               String   @id @default(cuid())
+  id               String         @id @default(cuid())
   name             String
   serviceToPitch   String
   targetNiche      String
   targetLocation   String
   offer            String
   cta              String
-  dailySendLimit   Int      @default(20)
-  minimumFitScore  Int      @default(60)
-  status           String   @default("DRAFT")
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  dailySendLimit   Int            @default(20)
+  minimumFitScore  Int            @default(60)
+  status           String         @default("DRAFT")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
   leads            Lead[]
   emailSendLogs    EmailSendLog[]
+  leadActivities   LeadActivity[]
 }
 
 model Lead {
-  id                  String   @id @default(cuid())
+  id                  String          @id @default(cuid())
   campaignId          String
-  campaign            Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign            Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   companyName         String
   website             String?
   email               String?
@@ -49,13 +50,19 @@ model Lead {
   painPoint           String?
   offerAngle          String?
   personalizationLine String?
-  fitScore            Int      @default(0)
+  fitScore            Int             @default(0)
   scoreBreakdown      String?
-  status              String   @default("NEW")
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  status              String          @default("NEW")
+  pipelineStatus      String          @default("NOT_CONTACTED")
+  lastContactedAt     DateTime?
+  repliedAt           DateTime?
+  nextFollowUpAt      DateTime?
+  notes               String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
   emailDrafts         EmailDraft[]
   emailSendLogs       EmailSendLog[]
+  activities          LeadActivity[]
 }
 
 model EmailDraft {
@@ -86,6 +93,17 @@ model EmailSendLog {
   simulated      Boolean   @default(true)
   sentAt         DateTime?
   createdAt      DateTime  @default(now())
+}
+
+model LeadActivity {
+  id         String   @id @default(cuid())
+  leadId     String
+  lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  type       String
+  message    String
+  createdAt  DateTime @default(now())
 }
 
 model Unsubscribe {

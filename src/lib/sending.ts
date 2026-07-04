@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { isUnsubscribedPlaceholder } from "./compliance";
+import { createLeadActivity } from "./lead-activity";
 
 function getLocalDateBoundaries(): { start: Date; end: Date } {
   const now = new Date();
@@ -147,6 +148,13 @@ export async function simulateSendDraft(
       },
     });
 
+    await createLeadActivity({
+      leadId: draft.lead.id,
+      campaignId: draft.lead.campaignId,
+      type: "SEND_SKIPPED",
+      message: `Send skipped for ${draft.lead.email}: ${reasons.join("; ")}.`,
+    });
+
     return {
       status: "skipped",
       companyName: draft.lead.companyName,
@@ -178,7 +186,18 @@ export async function simulateSendDraft(
 
     await prisma.lead.update({
       where: { id: draft.lead.id },
-      data: { status: "SENT" },
+      data: {
+        status: "SENT",
+        pipelineStatus: "CONTACTED",
+        lastContactedAt: now,
+      },
+    });
+
+    await createLeadActivity({
+      leadId: draft.lead.id,
+      campaignId: draft.lead.campaignId,
+      type: "EMAIL_SENT_SIMULATED",
+      message: `Simulated email sent to ${draft.lead.email}.`,
     });
 
     return {

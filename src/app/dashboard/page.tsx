@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getDashboardMetrics, getRecentCampaigns } from "@/lib/campaigns";
+import { getRecentActivities } from "@/lib/lead-activity";
 import ProfileSummaryCard from "@/components/profile-summary-card";
 import StatusBadge from "@/components/status-badge";
 import EmptyState from "@/components/empty-state";
@@ -13,26 +14,55 @@ function getLocalDateStart(): Date {
 export default async function DashboardPage() {
   const metrics = await getDashboardMetrics();
 
-  const [recentCampaigns, sentTodayCount, unsubCount, recentSends] =
-    await Promise.all([
-      getRecentCampaigns(),
-      prisma.emailSendLog.count({
-        where: {
-          status: "SENT",
-          simulated: true,
-          sentAt: { gte: getLocalDateStart() },
-        },
-      }),
-      prisma.unsubscribe.count(),
-      prisma.emailSendLog.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        include: {
-          lead: { select: { companyName: true } },
-          campaign: { select: { name: true, id: true } },
-        },
-      }),
-    ]);
+  const [
+    recentCampaigns,
+    sentTodayCount,
+    unsubCount,
+    recentSends,
+    recentActivities,
+    contactedCount,
+    repliedCount,
+    meetingsCount,
+    wonCount,
+    followUpsDue,
+  ] = await Promise.all([
+    getRecentCampaigns(),
+    prisma.emailSendLog.count({
+      where: {
+        status: "SENT",
+        simulated: true,
+        sentAt: { gte: getLocalDateStart() },
+      },
+    }),
+    prisma.unsubscribe.count(),
+    prisma.emailSendLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      include: {
+        lead: { select: { companyName: true } },
+        campaign: { select: { name: true, id: true } },
+      },
+    }),
+    getRecentActivities(5),
+    prisma.lead.count({
+      where: { pipelineStatus: { not: "NOT_CONTACTED" } },
+    }),
+    prisma.lead.count({
+      where: { pipelineStatus: "REPLIED" },
+    }),
+    prisma.lead.count({
+      where: { pipelineStatus: "MEETING_BOOKED" },
+    }),
+    prisma.lead.count({
+      where: { pipelineStatus: "WON" },
+    }),
+    prisma.lead.count({
+      where: {
+        nextFollowUpAt: { lte: new Date() },
+        pipelineStatus: { in: ["FOLLOW_UP", "INTERESTED", "REPLIED"] },
+      },
+    }),
+  ]);
 
   const cards = [
     { label: "Total campaigns", value: metrics.totalCampaigns },
@@ -48,6 +78,31 @@ export default async function DashboardPage() {
       label: "Unsubscribed",
       value: unsubCount,
       color: unsubCount > 0 ? "text-red-400" : "text-white",
+    },
+    {
+      label: "Contacted",
+      value: contactedCount,
+      color: contactedCount > 0 ? "text-blue-400" : "text-white",
+    },
+    {
+      label: "Replies",
+      value: repliedCount,
+      color: repliedCount > 0 ? "text-green-400" : "text-white",
+    },
+    {
+      label: "Meetings",
+      value: meetingsCount,
+      color: meetingsCount > 0 ? "text-yellow-400" : "text-white",
+    },
+    {
+      label: "Won",
+      value: wonCount,
+      color: wonCount > 0 ? "text-emerald-400" : "text-white",
+    },
+    {
+      label: "Follow-ups due",
+      value: followUpsDue,
+      color: followUpsDue > 0 ? "text-rose-400" : "text-white",
     },
   ];
 
@@ -99,7 +154,7 @@ export default async function DashboardPage() {
       <main className="flex-1 px-6 py-8 max-w-5xl mx-auto w-full">
         <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
           {cards.map((card) => (
             <div
               key={card.label}
@@ -170,6 +225,63 @@ export default async function DashboardPage() {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {recentActivities.length > 0 && (
+          <section className="mb-10">
+            <h2 className="text-lg font-semibold mb-3">Recent Activity</h2>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-zinc-800 text-left text-xs text-zinc-500 uppercase tracking-wider">
+                      <th className="pb-3 pr-4 pt-3 pl-5 font-medium">Date</th>
+                      <th className="pb-3 pr-4 pt-3 font-medium">Type</th>
+                      <th className="pb-3 pr-4 pt-3 font-medium">Lead</th>
+                      <th className="pb-3 pr-4 pt-3 font-medium">Campaign</th>
+                      <th className="pb-3 pr-3 pt-3 font-medium">Message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentActivities.map((a) => (
+                      <tr
+                        key={a.id}
+                        className="border-b border-zinc-800/50 last:border-0"
+                      >
+                        <td className="py-3 pr-4 pl-5 text-zinc-500 whitespace-nowrap text-xs">
+                          {new Date(a.createdAt).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </td>
+                        <td className="py-3 pr-4">
+                          <span className="text-xs text-zinc-400 uppercase tracking-wider">
+                            {a.type}
+                          </span>
+                        </td>
+                        <td className="py-3 pr-4 text-white text-xs">
+                          {a.lead.companyName}
+                        </td>
+                        <td className="py-3 pr-4">
+                          <Link
+                            href={`/campaigns/${a.campaign.id}`}
+                            className="text-indigo-400 hover:text-indigo-300 transition-colors text-xs"
+                          >
+                            {a.campaign.name}
+                          </Link>
+                        </td>
+                        <td className="py-3 pr-3 text-xs text-zinc-400 max-w-[200px] truncate">
+                          {a.message}
                         </td>
                       </tr>
                     ))}

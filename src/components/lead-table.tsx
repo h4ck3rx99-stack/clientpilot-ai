@@ -2,6 +2,7 @@ import Link from "next/link";
 import StatusBadge from "./status-badge";
 import { AnalyzeLeadButton } from "./analyze-buttons";
 import { GenerateDraftButton } from "./generate-draft-buttons";
+import { PipelineActionButtons } from "./pipeline-action-buttons";
 import FitScoreBadge from "./fit-score-badge";
 
 type Lead = {
@@ -13,6 +14,10 @@ type Lead = {
   industry: string | null;
   fitScore: number;
   status: string;
+  pipelineStatus: string;
+  lastContactedAt: Date | null;
+  nextFollowUpAt: Date | null;
+  notes: string | null;
   createdAt: Date;
 };
 
@@ -31,12 +36,12 @@ export default function LeadTable({
         <thead>
           <tr className="border-b border-zinc-800 text-left text-xs text-zinc-500 uppercase tracking-wider">
             <th className="pb-3 pr-4 font-medium">Company</th>
-            <th className="pb-3 pr-4 font-medium">Website</th>
             <th className="pb-3 pr-4 font-medium">Email</th>
             <th className="pb-3 pr-4 font-medium">Industry</th>
             <th className="pb-3 pr-4 font-medium">Score</th>
             <th className="pb-3 pr-4 font-medium">Status</th>
-            <th className="pb-3 pr-4 font-medium">Created</th>
+            <th className="pb-3 pr-4 font-medium">Pipeline</th>
+            <th className="pb-3 pr-4 font-medium">Last Contacted</th>
             <th className="pb-3 pr-3 font-medium">Actions</th>
           </tr>
         </thead>
@@ -53,18 +58,6 @@ export default function LeadTable({
                   )}
                 </div>
               </td>
-              <td className="py-3 pr-4 text-zinc-400 max-w-[140px] truncate">
-                {lead.website && (
-                  <a
-                    href={lead.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-indigo-400 transition-colors"
-                  >
-                    {lead.website.replace(/^https?:\/\//, "")}
-                  </a>
-                )}
-              </td>
               <td className="py-3 pr-4 text-zinc-400 max-w-[140px] truncate">{lead.email}</td>
               <td className="py-3 pr-4 text-zinc-400">{lead.industry || "—"}</td>
               <td className="py-3 pr-4">
@@ -77,11 +70,16 @@ export default function LeadTable({
               <td className="py-3 pr-4">
                 <StatusBadge status={lead.status} />
               </td>
-              <td className="py-3 pr-4 text-zinc-500 whitespace-nowrap">
-                {new Date(lead.createdAt).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })}
+              <td className="py-3 pr-4">
+                <StatusBadge status={lead.pipelineStatus} />
+              </td>
+              <td className="py-3 pr-4 text-xs text-zinc-500 whitespace-nowrap">
+                {lead.lastContactedAt
+                  ? new Date(lead.lastContactedAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "—"}
               </td>
               <td className="py-3">
                 <div className="flex flex-col gap-1">
@@ -92,6 +90,11 @@ export default function LeadTable({
                       campaignId={campaignId}
                     />
                   )}
+                  <PipelineActionButtons
+                    leadId={lead.id}
+                    campaignId={campaignId}
+                    currentStatus={lead.pipelineStatus}
+                  />
                   <Link
                     href={`/campaigns/${campaignId}/leads/${lead.id}/edit`}
                     className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"

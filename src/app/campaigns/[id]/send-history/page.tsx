@@ -38,12 +38,20 @@ export default async function SendHistoryPage({
             </Link>
             <h1 className="text-lg font-semibold mt-1">Send History</h1>
           </div>
-          <Link
-            href={`/campaigns/${campaignId}/emails`}
-            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-          >
-            &larr; Review Email Queue
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href={`/campaigns/${campaignId}/pipeline`}
+              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              Open Pipeline
+            </Link>
+            <Link
+              href={`/campaigns/${campaignId}/emails`}
+              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              &larr; Review Email Queue
+            </Link>
+          </div>
         </div>
       </header>
 
