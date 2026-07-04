@@ -52,6 +52,12 @@ export default function Home() {
             Profile
           </Link>
           <Link
+            href="/campaigns"
+            className="text-zinc-400 hover:text-white transition-colors"
+          >
+            Campaigns
+          </Link>
+          <Link
             href="/campaigns/new"
             className="text-zinc-400 hover:text-white transition-colors"
           >

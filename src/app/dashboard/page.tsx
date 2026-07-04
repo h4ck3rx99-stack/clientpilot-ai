@@ -1,28 +1,11 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { getDashboardMetrics, getRecentCampaigns } from "@/lib/campaigns";
 import ProfileSummaryCard from "@/components/profile-summary-card";
-
-async function getMetrics() {
-  const [totalCampaigns, totalLeads, emailsQueued, emailsSent] =
-    await Promise.all([
-      prisma.campaign.count(),
-      prisma.lead.count(),
-      prisma.emailDraft.count({ where: { status: "QUEUED" } }),
-      prisma.emailDraft.count({ where: { status: "SENT" } }),
-    ]);
-
-  return { totalCampaigns, totalLeads, emailsQueued, emailsSent };
-}
-
-async function getRecentCampaigns() {
-  return prisma.campaign.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 5,
-  });
-}
+import StatusBadge from "@/components/status-badge";
+import EmptyState from "@/components/empty-state";
 
 export default async function DashboardPage() {
-  const metrics = await getMetrics();
+  const metrics = await getDashboardMetrics();
   const recentCampaigns = await getRecentCampaigns();
 
   const cards = [
@@ -57,6 +40,12 @@ export default async function DashboardPage() {
             Profile
           </Link>
           <Link
+            href="/campaigns"
+            className="text-zinc-400 hover:text-white transition-colors"
+          >
+            Campaigns
+          </Link>
+          <Link
             href="/campaigns/new"
             className="text-zinc-400 hover:text-white transition-colors"
           >
@@ -88,45 +77,38 @@ export default async function DashboardPage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold mb-4">Recent campaigns</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Recent campaigns</h2>
+            <Link
+              href="/campaigns"
+              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              View all
+            </Link>
+          </div>
           {recentCampaigns.length === 0 ? (
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-8 text-center">
-              <p className="text-sm text-zinc-500 mb-4">
-                No campaigns yet. Create your first one.
-              </p>
-              <Link
-                href="/campaigns/new"
-                className="inline-flex h-10 items-center justify-center rounded-lg bg-indigo-500 px-5 text-sm font-medium text-white hover:bg-indigo-400 transition-colors"
-              >
-                Create Campaign
-              </Link>
-            </div>
+            <EmptyState
+              title="No campaigns yet."
+              description="Create your first one to get started."
+              actionLabel="Create Campaign"
+              actionHref="/campaigns/new"
+            />
           ) : (
             <div className="space-y-3">
               {recentCampaigns.map((c) => (
-                <div
-                  key={c.id}
-                  className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 flex items-center justify-between"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-white">{c.name}</p>
-                    <p className="text-xs text-zinc-500 mt-0.5">
-                      {c.targetNiche} &middot; {c.targetLocation} &middot;{" "}
-                      {c.status}
-                    </p>
+                <Link key={c.id} href={`/campaigns/${c.id}`}>
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 flex items-center justify-between hover:bg-zinc-900/80 transition-colors">
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        {c.name}
+                      </p>
+                      <p className="text-xs text-zinc-500 mt-0.5">
+                        {c.targetNiche} &middot; {c.targetLocation}
+                      </p>
+                    </div>
+                    <StatusBadge status={c.status} />
                   </div>
-                  <span
-                    className={`text-xs font-medium px-2.5 py-1 rounded-full border ${
-                      c.status === "ACTIVE"
-                        ? "text-green-400 border-green-800 bg-green-950/50"
-                        : c.status === "DRAFT"
-                        ? "text-zinc-400 border-zinc-700 bg-zinc-800/50"
-                        : "text-zinc-400 border-zinc-700 bg-zinc-800/50"
-                    }`}
-                  >
-                    {c.status}
-                  </span>
-                </div>
+                </Link>
               ))}
             </div>
           )}
