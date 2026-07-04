@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCampaignById } from "@/lib/campaigns";
+import { getLeadCountForCampaign, getRecentLeadsForCampaign } from "@/lib/leads";
 import StatusBadge from "@/components/status-badge";
 import CampaignControls from "./campaign-controls";
 
@@ -10,7 +11,11 @@ export default async function CampaignDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const campaign = await getCampaignById(id);
+  const [campaign, leadCount, recentLeads] = await Promise.all([
+    getCampaignById(id),
+    getLeadCountForCampaign(id),
+    getRecentLeadsForCampaign(id, 5),
+  ]);
 
   if (!campaign) {
     notFound();
@@ -133,14 +138,64 @@ export default async function CampaignDetailPage({
         <CampaignControls campaignId={campaign.id} status={campaign.status} />
 
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 mb-6">
-          <h2 className="text-sm font-semibold text-white mb-3">Leads</h2>
-          <p className="text-sm text-zinc-500 mb-4">No leads added yet.</p>
-          <Link
-            href={`/campaigns/${campaign.id}/leads/new`}
-            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-700 px-4 text-sm font-medium text-zinc-300 hover:bg-zinc-800 transition-colors"
-          >
-            Add leads manually
-          </Link>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-white">
+              Leads ({leadCount})
+            </h2>
+            <Link
+              href={`/campaigns/${campaign.id}/leads`}
+              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              Manage Leads
+            </Link>
+          </div>
+          {leadCount === 0 ? (
+            <p className="text-sm text-zinc-500 mb-4">No leads added yet.</p>
+          ) : (
+            <div className="space-y-1.5 mb-4">
+              {recentLeads.map((l) => (
+                <div
+                  key={l.id}
+                  className="flex items-center justify-between text-xs"
+                >
+                  <span className="text-zinc-300">{l.companyName}</span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                        l.fitScore >= 70
+                          ? "text-green-400 bg-green-950/50"
+                          : l.fitScore >= 40
+                          ? "text-amber-400 bg-amber-950/50"
+                          : "text-zinc-500 bg-zinc-800/50"
+                      }`}
+                    >
+                      {l.fitScore}
+                    </span>
+                    <StatusBadge status={l.status} />
+                  </div>
+                </div>
+              ))}
+              {leadCount > 5 && (
+                <p className="text-xs text-zinc-600 pt-1">
+                  +{leadCount - 5} more lead{leadCount - 5 !== 1 ? "s" : ""}
+                </p>
+              )}
+            </div>
+          )}
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href={`/campaigns/${campaign.id}/leads/new`}
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-zinc-700 px-3.5 text-xs font-medium text-zinc-300 hover:bg-zinc-800 transition-colors"
+            >
+              Add Lead Manually
+            </Link>
+            <Link
+              href={`/campaigns/${campaign.id}/leads/import`}
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-zinc-700 px-3.5 text-xs font-medium text-zinc-300 hover:bg-zinc-800 transition-colors"
+            >
+              Import CSV
+            </Link>
+          </div>
         </div>
 
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
