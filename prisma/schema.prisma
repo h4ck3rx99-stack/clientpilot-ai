@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model UserProfile {
+  id          String   @id @default(cuid())
+  businessName String?
+  senderName  String?
+  senderEmail String?
+  services    String?
+  proof       String?
+  tone        String?
+  defaultCTA  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Campaign {
+  id               String   @id @default(cuid())
+  name             String
+  serviceToPitch   String
+  targetNiche      String
+  targetLocation   String
+  offer            String
+  cta              String
+  dailySendLimit   Int      @default(20)
+  minimumFitScore  Int      @default(60)
+  status           String   @default("DRAFT")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  leads            Lead[]
+}
+
+model Lead {
+  id                  String   @id @default(cuid())
+  campaignId          String
+  campaign            Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  companyName         String
+  website             String?
+  email               String?
+  sourceUrl           String?
+  industry            String?
+  painPoint           String?
+  offerAngle          String?
+  personalizationLine String?
+  fitScore            Int      @default(0)
+  status              String   @default("NEW")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  emailDrafts         EmailDraft[]
+}
+
+model EmailDraft {
+  id        String    @id @default(cuid())
+  leadId    String
+  lead      Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  subject   String
+  body      String
+  status    String    @default("DRAFT")
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Unsubscribe {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  reason    String?
+  createdAt DateTime @default(now())
+}
