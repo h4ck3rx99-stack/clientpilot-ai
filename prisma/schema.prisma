@@ -62,6 +62,9 @@ model Lead {
   updatedAt           DateTime        @updatedAt
   aiProviderUsed      String?
   aiModelUsed         String?
+  discoverySource     String?
+  extractionConfidence Int?
+  extractionNotes     String?
   emailDrafts         EmailDraft[]
   emailSendLogs       EmailSendLog[]
   activities          LeadActivity[]

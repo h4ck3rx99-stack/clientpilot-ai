@@ -62,6 +62,12 @@ export default async function CampaignLeadsPage({
             </p>
           </div>
           <div className="flex gap-3">
+            <Link
+              href={`/campaigns/${id}/discover`}
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-emerald-700 px-5 text-sm font-medium text-emerald-400 hover:bg-emerald-950/30 transition-colors"
+            >
+              Discover More Leads
+            </Link>
             {count > 0 && <AnalyzeAndDraftAllButton campaignId={id} />}
             {count > 0 && <AnalyzeAllButton campaignId={id} />}
             <GenerateDraftsAllButton campaignId={id} />

@@ -325,6 +325,12 @@ export default async function CampaignDetailPage({
           )}
           <div className="flex flex-wrap gap-3">
             <Link
+              href={`/campaigns/${campaign.id}/discover`}
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-emerald-700 px-3.5 text-xs font-medium text-emerald-400 hover:bg-emerald-950/30 transition-colors"
+            >
+              Discover Leads
+            </Link>
+            <Link
               href={`/campaigns/${campaign.id}/leads/new`}
               className="inline-flex h-9 items-center justify-center rounded-lg border border-zinc-700 px-3.5 text-xs font-medium text-zinc-300 hover:bg-zinc-800 transition-colors"
             >

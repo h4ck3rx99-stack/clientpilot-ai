@@ -12,6 +12,9 @@ export type LeadInput = {
   fitScore?: number;
   scoreBreakdown?: string;
   status?: string;
+  discoverySource?: string;
+  extractionConfidence?: number;
+  extractionNotes?: string;
 };
 
 export type CsvRow = {
@@ -48,6 +51,9 @@ export async function createLead(campaignId: string, data: LeadInput) {
       fitScore: data.fitScore ?? 0,
       scoreBreakdown: data.scoreBreakdown ?? null,
       status: data.status ?? "NEW",
+      discoverySource: data.discoverySource ?? null,
+      extractionConfidence: data.extractionConfidence ?? null,
+      extractionNotes: data.extractionNotes ?? null,
     },
   });
 }
@@ -67,6 +73,9 @@ export async function updateLead(id: string, data: LeadInput) {
       fitScore: data.fitScore ?? 0,
       scoreBreakdown: data.scoreBreakdown ?? undefined,
       status: data.status ?? undefined,
+      discoverySource: data.discoverySource ?? undefined,
+      extractionConfidence: data.extractionConfidence ?? undefined,
+      extractionNotes: data.extractionNotes ?? undefined,
     },
   });
 }

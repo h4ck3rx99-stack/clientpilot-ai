@@ -27,6 +27,7 @@ export default async function DashboardPage() {
     followUpsDue,
     fuDraftsPending,
     recentAiUsage,
+    newLeadsWaiting,
   ] = await Promise.all([
     getRecentCampaigns(),
     prisma.emailSendLog.count({
@@ -74,6 +75,9 @@ export default async function DashboardPage() {
       orderBy: { createdAt: "desc" },
       take: 5,
     }),
+    prisma.lead.count({
+      where: { status: "NEW" },
+    }),
   ]);
 
   const cards = [
@@ -120,6 +124,11 @@ export default async function DashboardPage() {
       label: "Follow-up drafts pending",
       value: fuDraftsPending,
       color: fuDraftsPending > 0 ? "text-purple-400" : "text-white",
+    },
+    {
+      label: "New leads waiting for analysis",
+      value: newLeadsWaiting,
+      color: newLeadsWaiting > 0 ? "text-amber-400" : "text-white",
     },
   ];
 

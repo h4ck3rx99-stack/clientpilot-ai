@@ -20,6 +20,8 @@ type Lead = {
   nextFollowUpAt: Date | null;
   notes: string | null;
   createdAt: Date;
+  discoverySource?: string | null;
+  extractionConfidence?: number | null;
 };
 
 export default function LeadTable({
@@ -55,6 +57,20 @@ export default function LeadTable({
                   {lead.email && unsubscribedEmails.includes(lead.email) && (
                     <span className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-800/50 px-2 py-0.5 text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
                       Unsubscribed
+                    </span>
+                  )}
+                  {lead.discoverySource === "pasted_source" && (
+                    <span className="inline-flex items-center rounded-full border border-emerald-700/50 bg-emerald-950/30 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                      Discovered
+                    </span>
+                  )}
+                  {lead.extractionConfidence !== null && lead.extractionConfidence !== undefined && lead.extractionConfidence > 0 && (
+                    <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-medium ${
+                      lead.extractionConfidence >= 80 ? "border-green-700/50 bg-green-950/30 text-green-400" :
+                      lead.extractionConfidence >= 60 ? "border-yellow-700/50 bg-yellow-950/30 text-yellow-400" :
+                      "border-rose-700/50 bg-rose-950/30 text-rose-400"
+                    }`}>
+                      {lead.extractionConfidence}%
                     </span>
                   )}
                 </div>
