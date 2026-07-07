@@ -28,6 +28,21 @@ export default async function DiscoverPage({ params }: { params: Promise<{ id: s
         </p>
       </div>
 
+      <section className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 mb-8">
+        <h2 className="text-sm font-semibold text-white mb-3">How to use this</h2>
+        <ol className="space-y-1.5 text-xs text-zinc-400">
+          <li>1. Copy one search query below.</li>
+          <li>2. Search manually on Google or your preferred directory.</li>
+          <li>3. Open public business or contact pages.</li>
+          <li>4. Paste the listing text into the text area below.</li>
+          <li>5. Add the source URL for each listing.</li>
+          <li>6. Review extracted leads before saving.</li>
+        </ol>
+        <p className="text-xs text-zinc-600 mt-3">
+          This does not scrape websites automatically. You control what data gets pasted and saved.
+        </p>
+      </section>
+
       <section className="mb-10">
         <h2 className="text-sm font-semibold text-white mb-3">Search Query Ideas</h2>
         <p className="text-xs text-zinc-500 mb-4">Try these search queries on Google or other search engines to find public business listings.</p>

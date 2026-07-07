@@ -141,20 +141,21 @@ export default function SimulatedSendCard({
       {isSmtpMode && (
         <>
           <div className="rounded-xl border border-rose-800/30 bg-rose-950/10 p-4 space-y-3">
-            <p className="text-xs font-semibold text-rose-300">Real emails will be sent. Only reviewed QUEUED drafts are eligible.</p>
-            <div className="grid grid-cols-2 gap-2 text-xs text-zinc-400">
+            <p className="text-xs font-semibold text-rose-300">Real emails will be sent. Confirm the following before sending:</p>
+            <ul className="space-y-1.5 text-xs text-zinc-400">
+              <li className="flex items-start gap-2"><span className="text-rose-500 shrink-0">&#9656;</span> I reviewed every queued draft</li>
+              <li className="flex items-start gap-2"><span className="text-rose-500 shrink-0">&#9656;</span> I am using public business contacts with source URLs</li>
+              <li className="flex items-start gap-2"><span className="text-rose-500 shrink-0">&#9656;</span> Unsubscribed contacts will be skipped automatically</li>
+              <li className="flex items-start gap-2"><span className="text-rose-500 shrink-0">&#9656;</span> I want to send within configured limits</li>
+            </ul>
+            <div className="grid grid-cols-2 gap-2 text-xs text-zinc-500 pt-2 border-t border-rose-800/20">
               <span>Queued drafts: {queuedCount}</span>
               <span>Campaign daily limit: {dailySendLimit}</span>
               <span>Real send daily limit: {process.env.NEXT_PUBLIC_REAL_SEND_DAILY_LIMIT || "20"}</span>
               <span>Batch limit: {process.env.NEXT_PUBLIC_REAL_SEND_BATCH_LIMIT || "10"}</span>
             </div>
             <label className="flex items-start gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={confirmed}
-                onChange={(e) => setConfirmed(e.target.checked)}
-                className="mt-0.5 size-4 rounded border-zinc-600 bg-zinc-800 accent-indigo-500"
-              />
+              <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="mt-0.5 size-4 rounded border-zinc-600 bg-zinc-800 accent-indigo-500" />
               <span className="text-xs text-zinc-300">I understand real emails will be sent.</span>
             </label>
           </div>

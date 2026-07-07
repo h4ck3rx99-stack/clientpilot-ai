@@ -1,11 +1,14 @@
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
+import { getEmailProviderStatus } from "@/lib/email";
 import AppShell from "@/components/app-shell";
 import { CardSection } from "@/components/ui/card";
+import { Alert } from "@/components/ui/alert";
 import { LinkButton } from "@/components/ui/button";
 
 export default async function DailyPage() {
   const user = await requireUser();
+  const emailStatus = getEmailProviderStatus();
 
   const now = new Date();
 
@@ -15,17 +18,24 @@ export default async function DailyPage() {
     select: { id: true, name: true },
   });
 
-  const [queuedEmails, followUpsDue, draftsPendingReview, interestedLeads, meetingsBooked] = await Promise.all([
+  const [queuedEmails, followUpsDue, draftsPendingReview, interestedLeads, meetingsBooked, simulatedSendCount] = await Promise.all([
     prisma.emailDraft.count({ where: { userId: user.id, status: "QUEUED" } }),
     prisma.lead.count({ where: { userId: user.id, pipelineStatus: { in: ["FOLLOW_UP", "INTERESTED", "REPLIED"] }, nextFollowUpAt: { lte: now } } }),
     prisma.emailDraft.count({ where: { userId: user.id, status: "DRAFT" } }),
     prisma.lead.count({ where: { userId: user.id, pipelineStatus: "INTERESTED" } }),
     prisma.lead.count({ where: { userId: user.id, pipelineStatus: "MEETING_BOOKED" } }),
+    prisma.emailSendLog.count({ where: { userId: user.id, simulated: true } }),
   ]);
 
   return (
     <AppShell activePage="/daily" email={user.email || ""}>
       <h1 className="text-2xl font-bold mb-6">Daily Outreach Routine</h1>
+
+      {emailStatus.mode === "smtp" && simulatedSendCount === 0 && (
+        <Alert variant="warning" className="mb-6">
+          Run a simulated send before switching to real SMTP. Switch to simulation mode in settings to test first.
+        </Alert>
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
         {[

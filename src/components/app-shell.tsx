@@ -6,6 +6,7 @@ type NavItem = { label: string; href: string; developmentOnly?: boolean; section
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Daily", href: "/daily" },
+  { label: "Playbook", href: "/playbook/first-50" },
   { label: "Launch", href: "/launch" },
   { label: "Onboarding", href: "/onboarding" },
   { label: "Profile", href: "/profile" },

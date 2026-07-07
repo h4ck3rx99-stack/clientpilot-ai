@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import CampaignForm, { type CampaignFormData } from "@/components/campaign-form";
 
@@ -10,51 +11,53 @@ type Profile = {
   services: string | null;
 };
 
+const QUERY_TEMPLATES: Record<string, CampaignFormData> = {
+  "website-audit": {
+    name: "Website audit outreach",
+    serviceToPitch: "Website design and landing page improvement",
+    targetNiche: "Local businesses",
+    targetLocation: "",
+    offer: "Free homepage audit",
+    cta: "Would you be open to a quick 15-minute call this week?",
+    dailySendLimit: 10,
+    minimumFitScore: 75,
+  },
+  "ai-automation": {
+    name: "AI automation outreach",
+    serviceToPitch: "AI automation and follow-up systems",
+    targetNiche: "Education institutes, clinics, and service businesses",
+    targetLocation: "",
+    offer: "Free automation workflow idea",
+    cta: "Would you be open to a quick 15-minute call this week?",
+    dailySendLimit: 10,
+    minimumFitScore: 75,
+  },
+  "dashboard-crm": {
+    name: "Dashboard and CRM outreach",
+    serviceToPitch: "Dashboards, CRM, and internal workflow tools",
+    targetNiche: "Agencies, consultants, and growing small businesses",
+    targetLocation: "",
+    offer: "Free workflow audit",
+    cta: "Would you be open to a quick 15-minute call this week?",
+    dailySendLimit: 10,
+    minimumFitScore: 80,
+  },
+};
+
 const TEMPLATES: { label: string; data: CampaignFormData }[] = [
-  {
-    label: "Website clients",
-    data: {
-      name: "Website outreach",
-      serviceToPitch: "Website design and landing page improvement",
-      targetNiche: "Local businesses",
-      targetLocation: "",
-      offer: "Free homepage audit",
-      cta: "Would you be open to a quick 15-minute call this week?",
-      dailySendLimit: 20,
-      minimumFitScore: 75,
-    },
-  },
-  {
-    label: "AI automation clients",
-    data: {
-      name: "AI automation outreach",
-      serviceToPitch: "AI automation and follow-up systems",
-      targetNiche: "Education institutes, clinics, and service businesses",
-      targetLocation: "",
-      offer: "Free automation workflow idea",
-      cta: "Would you be open to a quick 15-minute call this week?",
-      dailySendLimit: 20,
-      minimumFitScore: 75,
-    },
-  },
-  {
-    label: "Dashboard/internal tools",
-    data: {
-      name: "Dashboard outreach",
-      serviceToPitch: "Dashboards, CRM, and internal tools",
-      targetNiche: "Agencies and growing small businesses",
-      targetLocation: "",
-      offer: "Free workflow audit",
-      cta: "Would you be open to a quick 15-minute call this week?",
-      dailySendLimit: 15,
-      minimumFitScore: 80,
-    },
-  },
+  { label: "Website clients", data: QUERY_TEMPLATES["website-audit"] },
+  { label: "AI automation clients", data: QUERY_TEMPLATES["ai-automation"] },
+  { label: "Dashboard/internal tools", data: QUERY_TEMPLATES["dashboard-crm"] },
 ];
 
-export default function NewCampaignPage() {
+function NewCampaignForm() {
+  const searchParams = useSearchParams();
+  const templateParam = searchParams.get("template");
+  const initialFormData = templateParam && QUERY_TEMPLATES[templateParam]
+    ? { ...QUERY_TEMPLATES[templateParam] }
+    : undefined;
   const [profile, setProfile] = useState<Profile | null | "loading">("loading");
-  const [formData, setFormData] = useState<CampaignFormData | undefined>(undefined);
+  const [formData, setFormData] = useState<CampaignFormData | undefined>(initialFormData);
 
   useEffect(() => {
     fetch("/api/profile")
@@ -131,5 +134,13 @@ export default function NewCampaignPage() {
         <CampaignForm action="create" cancelHref="/dashboard" initial={formData} key={formData ? JSON.stringify(formData) : "empty"} />
       </main>
     </>
+  );
+}
+
+export default function NewCampaignPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewCampaignForm />
+    </Suspense>
   );
 }

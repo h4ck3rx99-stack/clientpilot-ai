@@ -5,6 +5,7 @@ import { getCampaignById } from "@/lib/campaigns";
 import { getLeadById } from "@/lib/leads";
 import { getLeadActivities } from "@/lib/lead-activity";
 import { getSession } from "@/lib/auth/session";
+import { scoreLeadQuality } from "@/lib/lead-quality";
 import LeadForm from "@/components/lead-form";
 import LeadManageForm from "@/components/lead-manage-form";
 import ActivityTimeline from "@/components/activity-timeline";
@@ -123,6 +124,46 @@ export default async function EditLeadPage({
             <ReanalyzeButton leadId={lead.id} />
           </div>
         )}
+
+        {/* Lead Quality */}
+        {(() => {
+          const leadQuality = scoreLeadQuality({
+            companyName: lead.companyName,
+            website: lead.website,
+            email: lead.email,
+            sourceUrl: lead.sourceUrl,
+            industry: lead.industry,
+            personalizationLine: lead.personalizationLine,
+            fitScore: lead.fitScore,
+          });
+          return (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-white">Lead Quality</h2>
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium ${
+                  leadQuality.score >= 80 ? "border border-emerald-700/50 bg-emerald-950/30 text-emerald-400" :
+                  leadQuality.score >= 50 ? "border border-yellow-700/50 bg-yellow-950/30 text-yellow-400" :
+                  "border border-rose-700/50 bg-rose-950/30 text-rose-400"
+                }`}>
+                  {leadQuality.score}/100
+                </span>
+              </div>
+              {leadQuality.warnings.length > 0 && (
+                <div className="space-y-1">
+                  {leadQuality.warnings.map((w, i) => (
+                    <p key={i} className="text-xs text-rose-400 flex items-start gap-1.5">
+                      <span className="mt-0.5 shrink-0">&#9888;</span>
+                      <span>{w}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
+              {leadQuality.warnings.length === 0 && (
+                <p className="text-xs text-emerald-400">All checks passed.</p>
+              )}
+            </div>
+          );
+        })()}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">

@@ -54,18 +54,23 @@ export default async function ImportLeadsPage({
           </p>
         </div>
 
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 mb-6">
-          <p className="text-xs text-zinc-400 mb-2">Expected CSV format:</p>
-          <pre className="text-xs text-zinc-500 bg-zinc-950 rounded p-3 overflow-x-auto">
+        <details className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 mb-6 group">
+          <summary className="text-xs text-zinc-400 font-medium cursor-pointer group-open:mb-3">CSV example for first 10 leads</summary>
+          <pre className="text-xs text-zinc-500 bg-zinc-950 rounded p-3 overflow-x-auto mb-2">
 {`companyName,website,email,sourceUrl,industry
-Orange Education,https://orangeeducation.com,info@orangeeducation.com,https://orangeeducation.com,Education`}
+Example Business,https://example.com,hello@example.com,https://example.com/contact,Local Business`}
           </pre>
-          <p className="text-xs text-zinc-600 mt-2">
+          <p className="text-xs text-zinc-600">
             Required columns: companyName, website, email, sourceUrl
             <br />
             Optional columns: industry
           </p>
-        </div>
+          <div className="rounded-lg border border-amber-800/30 bg-amber-950/20 p-3 mt-3">
+            <p className="text-xs text-amber-400">
+              Use real public business contact details only. Replace this example data before importing.
+            </p>
+          </div>
+        </details>
 
         <CsvImportForm campaignId={id} />
       </main>

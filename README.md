@@ -164,12 +164,22 @@ https://your-domain.com/api/auth/google/callback
 ```
 Add the same URL as an authorized redirect URI in Google Cloud Console.
 
+## Using ClientPilot AI for Your First 50 Leads
+
+The [First 50 Leads Playbook](./docs/FIRST_50_LEADS_PLAYBOOK.md) walks you through picking an offer, finding leads, analyzing, drafting, sending, and tracking results.
+
+For daily use, see the [Daily Workflow Guide](./docs/DAILY_WORKFLOW.md).
+
+For email copy best practices, see the [Email Copy Rules](./docs/EMAIL_COPY_RULES.md).
+
+All documentation:
+- [First 50 Leads Playbook](./docs/FIRST_50_LEADS_PLAYBOOK.md) — step-by-step outreach workflow
+- [Daily Workflow Guide](./docs/DAILY_WORKFLOW.md) — recommended daily routine
+- [Email Copy Rules](./docs/EMAIL_COPY_RULES.md) — writing effective outreach emails
+- [Production Checklist](./docs/PRODUCTION_CHECKLIST.md) — before sending real emails
+- [QA Checklist](./docs/QA_CHECKLIST.md) — full manual test coverage
+- [Known Limitations](./docs/LIMITATIONS.md) — current scope and constraints
+
 ## Database Note
 
 **SQLite** is fine for local and personal usage. For a public hosted SaaS in the future, migrate to **Postgres**.
-
-## More
-
-See [docs/PRODUCTION_CHECKLIST.md](./docs/PRODUCTION_CHECKLIST.md) before sending real emails.
-See [docs/QA_CHECKLIST.md](./docs/QA_CHECKLIST.md) for full manual test.
-See [docs/LIMITATIONS.md](./docs/LIMITATIONS.md) for known limitations.

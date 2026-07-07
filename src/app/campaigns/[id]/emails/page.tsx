@@ -29,6 +29,8 @@ export default async function EmailQueuePage({ params, searchParams }: { params:
     getTodaySendCountForCampaign(user.id, campaignId),
   ]);
 
+  const hasSimulatedSend = await prisma.emailSendLog.count({ where: { userId: user.id, simulated: true } });
+
   let filteredDrafts = [...allDrafts];
   if (query.status && query.status !== "all") {
     filteredDrafts = filteredDrafts.filter((d) => d.status === query.status);
@@ -48,6 +50,12 @@ export default async function EmailQueuePage({ params, searchParams }: { params:
       <Alert variant="info" className="mb-6">
         Only QUEUED drafts can be sent. DRAFT means review pending. Cancelled drafts are discarded.
       </Alert>
+
+      {emailStatus.mode === "smtp" && hasSimulatedSend === 0 && (
+        <Alert variant="warning" className="mb-6">
+          You have not run a simulated send yet. Run a simulated send before switching to real SMTP to avoid mistakes.
+        </Alert>
+      )}
 
       <SimulatedSendCard
         campaignId={campaignId}

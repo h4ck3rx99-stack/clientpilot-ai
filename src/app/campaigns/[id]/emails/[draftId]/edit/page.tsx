@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getEmailDraftById } from "@/lib/email-drafts";
 import { getEmailProviderStatus } from "@/lib/email";
 import { requireUser } from "@/lib/auth/session";
+import { scoreEmailQuality } from "@/lib/outreach-quality";
 import AppShell from "@/components/app-shell";
 import EmailDraftForm from "@/components/email-draft-form";
 import StatusBadge from "@/components/status-badge";
@@ -18,6 +19,7 @@ export default async function EditDraftPage({ params }: { params: Promise<{ id: 
   const emailMode = emailStatus.mode;
 
   const readOnly = draft.status === "SENT" || draft.status === "CANCELLED";
+  const quality = scoreEmailQuality(draft.subject, draft.body);
 
   return (
     <AppShell activePage="/campaigns" email={user.email || ""}>
@@ -56,6 +58,44 @@ export default async function EditDraftPage({ params }: { params: Promise<{ id: 
           {draft.lead.personalizationLine && <p><span className="text-zinc-500">Personalization: </span>{draft.lead.personalizationLine}</p>}
         </div>
       </div>
+
+      {/* Quality Check */}
+      {!readOnly && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-white">Quality Check</h2>
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium ${
+              quality.score >= 80 ? "border border-emerald-700/50 bg-emerald-950/30 text-emerald-400" :
+              quality.score >= 50 ? "border border-yellow-700/50 bg-yellow-950/30 text-yellow-400" :
+              "border border-rose-700/50 bg-rose-950/30 text-rose-400"
+            }`}>
+              {quality.score}/100
+            </span>
+          </div>
+          {quality.warnings.length > 0 && (
+            <div className="space-y-1 mb-3">
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Warnings</p>
+              {quality.warnings.map((w, i) => (
+                <p key={i} className="text-xs text-rose-400 flex items-start gap-1.5">
+                  <span className="mt-0.5 shrink-0">&#9888;</span>
+                  <span>{w}</span>
+                </p>
+              ))}
+            </div>
+          )}
+          {quality.suggestions.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Suggestions</p>
+              {quality.suggestions.map((s, i) => (
+                <p key={i} className="text-xs text-zinc-400 flex items-start gap-1.5">
+                  <span className="mt-0.5 shrink-0 text-indigo-400">&#9672;</span>
+                  <span>{s}</span>
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {draft.status === "SENT" && (
         <div className="rounded-xl border border-green-800 bg-green-950/30 p-5 mb-6">
