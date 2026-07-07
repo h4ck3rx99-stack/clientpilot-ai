@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getProviderStatuses } from "@/lib/ai";
 import { requireUser } from "@/lib/auth/session";
 import AppShell from "@/components/app-shell";

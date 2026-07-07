@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth/session";
 import LogoutButton from "./logout-button";
 
-type NavItem = { label: string; href: string; developmentOnly?: boolean };
+type NavItem = { label: string; href: string; developmentOnly?: boolean; section?: string };
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard" },
+  { label: "Daily", href: "/daily" },
+  { label: "Launch", href: "/launch" },
   { label: "Onboarding", href: "/onboarding" },
   { label: "Profile", href: "/profile" },
   { label: "Campaigns", href: "/campaigns" },
@@ -13,22 +14,28 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Unsubscribes", href: "/unsubscribes" },
   { label: "AI Settings", href: "/settings/ai" },
   { label: "Email Settings", href: "/settings/email" },
+  { label: "Test Email", href: "/settings/test-email" },
+  { label: "Deliverability", href: "/settings/deliverability" },
   { label: "System", href: "/settings/system" },
   { label: "Backup", href: "/settings/backup" },
   { label: "Dev Tools", href: "/settings/dev-tools", developmentOnly: true },
 ];
 
-export default async function AppShell({ activePage, email, children }: { activePage: string; email: string; children: React.ReactNode }) {
+function isActive(activePage: string, itemHref: string): boolean {
+  if (activePage === itemHref) return true;
+  if (itemHref === "/dashboard") return false;
+  if (itemHref === "/") return false;
+  return activePage.startsWith(itemHref);
+}
 
+export default async function AppShell({ activePage, email, children }: { activePage: string; email: string; children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Topbar */}
       <header className="h-14 border-b border-zinc-800 flex items-center justify-between px-4 lg:px-6 sticky top-0 bg-black z-40">
         <div className="flex items-center gap-3">
           <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-            <div className="size-7 rounded-lg bg-indigo-500 flex items-center justify-center text-xs font-bold text-white">
-              CP
-            </div>
+            <div className="size-7 rounded-lg bg-indigo-500 flex items-center justify-center text-xs font-bold text-white">CP</div>
             <span className="text-sm font-semibold hidden sm:inline">ClientPilot AI</span>
           </Link>
         </div>
@@ -48,7 +55,7 @@ export default async function AppShell({ activePage, email, children }: { active
                 key={item.href}
                 href={item.href}
                 className={`block rounded-lg px-3 py-2 text-sm transition-colors ${
-                  activePage === item.href || (activePage !== "/dashboard" && item.href !== "/dashboard" && item.href !== "/" && activePage.startsWith(item.href))
+                  isActive(activePage, item.href)
                     ? "bg-zinc-800 text-white font-medium"
                     : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
                 }`}
@@ -67,7 +74,7 @@ export default async function AppShell({ activePage, email, children }: { active
                 key={item.href}
                 href={item.href}
                 className={`whitespace-nowrap rounded-lg px-2.5 py-1.5 transition-colors ${
-                  activePage.startsWith(item.href) ? "bg-zinc-800 text-white font-medium" : "text-zinc-500"
+                  isActive(activePage, item.href) ? "bg-zinc-800 text-white font-medium" : "text-zinc-500"
                 }`}
               >
                 {item.label}

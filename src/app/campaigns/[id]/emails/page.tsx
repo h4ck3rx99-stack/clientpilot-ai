@@ -12,7 +12,6 @@ import SimulatedSendCard from "@/components/simulated-send-card";
 import EmptyState from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Alert } from "@/components/ui/alert";
-import { CardSection } from "@/components/ui/card";
 
 export default async function EmailQueuePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ status?: string; type?: string }> }) {
   const user = await requireUser();

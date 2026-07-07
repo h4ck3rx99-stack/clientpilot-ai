@@ -1,11 +1,10 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/session";
 import AppShell from "@/components/app-shell";
 import { CardSection } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import RunActions from "./actions";
 
 export default async function RunPage({ params }: { params: Promise<{ id: string }> }) {

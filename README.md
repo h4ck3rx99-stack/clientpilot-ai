@@ -107,6 +107,34 @@ Visit [http://localhost:3000](http://localhost:3000).
 | `npx prisma db push` | Sync schema changes to database |
 | `npx prisma migrate dev` | Create a new migration |
 
+## Personal Use Workflow
+
+Recommended flow for first outreach:
+
+1. Set up environment (copy `.env.example` to `.env`, fill in `DATABASE_URL`)
+2. Configure Groq API key (optional — app works without it using local rules)
+3. Keep `EMAIL_MODE=simulation` for initial testing
+4. Create your profile at `/profile`
+5. Create a campaign at `/campaigns/new`
+6. Add 10-20 leads (manual, CSV import, or discovery assistant)
+7. Run Analyze + Draft at `/campaigns/[id]`
+8. Review every draft in the email queue at `/campaigns/[id]/emails`
+9. Queue good drafts (set status to QUEUED)
+10. Run simulated send at `/campaigns/[id]/emails`
+11. Check send history at `/campaigns/[id]/send-history`
+12. Send a test email at `/settings/test-email`
+13. Configure SMTP and switch to real mode only after testing
+14. Start with 3-5 real emails per day
+15. Track replies in pipeline at `/campaigns/[id]/pipeline`
+16. Export backup regularly at `/settings/backup`
+17. Run the launch checklist at `/launch` before going real
+
+## Database Note
+
+**SQLite** is fine for local and personal usage. For a public hosted SaaS in the future, migrate to **Postgres**.
+
 ## More
 
 See [docs/PRODUCTION_CHECKLIST.md](./docs/PRODUCTION_CHECKLIST.md) before sending real emails.
+See [docs/QA_CHECKLIST.md](./docs/QA_CHECKLIST.md) for full manual test.
+See [docs/LIMITATIONS.md](./docs/LIMITATIONS.md) for known limitations.

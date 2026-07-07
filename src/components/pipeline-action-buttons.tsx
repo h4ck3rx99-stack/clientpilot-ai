@@ -15,7 +15,7 @@ const QUICK_ACTIONS = [
 
 export function PipelineActionButtons({
   leadId,
-  campaignId,
+  campaignId: _campaignId,
   currentStatus,
 }: {
   leadId: string;

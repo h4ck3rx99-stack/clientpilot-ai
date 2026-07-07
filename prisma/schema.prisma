@@ -24,6 +24,7 @@ model User {
   unsubscribes      Unsubscribe[]
   unsubscribeTokens UnsubscribeToken[]
   onboardingState   OnboardingState?
+  testEmailLogs     TestEmailLog[]
 }
 
 model UserProfile {
@@ -225,6 +226,22 @@ model UserActionLog {
 
   @@index([userId, actionType, createdAt])
   @@index([userId, createdAt])
+}
+
+model TestEmailLog {
+  id              String   @id @default(cuid())
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id])
+  recipientEmail  String
+  subject         String
+  status          String   @default("SENT")
+  provider        String?
+  reason          String?
+  realSend        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model AIUsageLog {

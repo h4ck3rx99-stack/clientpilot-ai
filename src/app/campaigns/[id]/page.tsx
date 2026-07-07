@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCampaignById } from "@/lib/campaigns";
@@ -9,12 +9,9 @@ import { requireUser } from "@/lib/auth/session";
 import { getEmailProviderStatus } from "@/lib/email";
 import AppShell from "@/components/app-shell";
 import StatusBadge from "@/components/status-badge";
-import FitScoreBadge from "@/components/fit-score-badge";
 import CampaignControls from "./campaign-controls";
-import { Card, CardSection } from "@/components/ui/card";
-import { Button, LinkButton } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Alert } from "@/components/ui/alert";
+import { CardSection } from "@/components/ui/card";
+import { LinkButton } from "@/components/ui/button";
 
 export default async function CampaignDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
@@ -37,6 +34,18 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
   const highFitCount = await prisma.lead.count({ where: { campaignId: id, status: "ANALYZED", fitScore: { gte: 60 } } });
   const draftCount = emailStats.total;
   const queuedCount = emailStats.queued;
+
+  const smtpConfigured = emailStatus.smtpConfigured;
+  const hasSimulatedSend = emailStats.sent > 0;
+
+  const campaignReadinessItems = [
+    { label: "Campaign active", done: campaign.status === "ACTIVE" },
+    { label: "Leads added", done: leadCount > 0 },
+    { label: "Analyzed leads", done: analyzedCount > 0 },
+    { label: "Queued emails", done: queuedCount > 0 },
+    { label: "Simulated send", done: hasSimulatedSend },
+    { label: "SMTP ready", done: smtpConfigured },
+  ];
 
   const workflowSteps = [
     { label: "Leads added", done: leadCount > 0, count: leadCount },
@@ -79,6 +88,24 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
         <LinkButton href={`/campaigns/${campaign.id}/send-history`} variant="secondary" size="sm">Send History</LinkButton>
         <LinkButton href={`/campaigns/${campaign.id}/edit`} variant="ghost" size="sm">Edit</LinkButton>
       </div>
+
+      {/* Launch Readiness */}
+      <CardSection className="border-zinc-800 mb-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Launch Readiness</p>
+            <div className="flex flex-wrap gap-2">
+              {campaignReadinessItems.map((item) => (
+                <span key={item.label} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${item.done ? "border border-emerald-700/50 bg-emerald-950/30 text-emerald-400" : "border border-zinc-700 bg-zinc-800/50 text-zinc-500"}`}>
+                  <span className={`inline-block size-1.5 rounded-full ${item.done ? "bg-emerald-500" : "bg-zinc-600"}`} />
+                  {item.label}
+                </span>
+              ))}
+            </div>
+          </div>
+          <LinkButton href="/launch" variant="secondary" size="sm">Open Launch Checklist</LinkButton>
+        </div>
+      </CardSection>
 
       <div className="grid gap-6 lg:grid-cols-2 mb-8">
         {/* Campaign Health */}

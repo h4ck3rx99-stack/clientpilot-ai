@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCampaignById } from "@/lib/campaigns";
-import { getLeadsByCampaignId, getLeadCountForCampaign } from "@/lib/leads";
+import { getLeadsByCampaignId } from "@/lib/leads";
 import { requireUser } from "@/lib/auth/session";
 import AppShell from "@/components/app-shell";
 import LeadTable from "@/components/lead-table";

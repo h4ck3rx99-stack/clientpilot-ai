@@ -63,6 +63,17 @@ Use this checklist before sending real emails from a deployed instance.
 - [ ] Monitor unsubscribe rates
 - [ ] Adjust daily limits based on deliverability
 
+## Launch Checklist
+
+- [ ] Run the launch checklist at `/launch`
+- [ ] Send a test email to yourself at `/settings/test-email`
+- [ ] Confirm unsubscribe link works with your public `APP_URL`
+- [ ] Confirm backup export works at `/settings/backup`
+- [ ] Verify no blockers or warnings before sending real emails
+- [ ] Keep your first real batch tiny (3-5 emails)
+- [ ] Visit `/daily` to establish a daily outreach routine
+- [ ] Read `/settings/deliverability` for deliverability best practices
+
 ## Never Do
 
 - Do not send to purchased email lists

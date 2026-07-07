@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getDashboardMetrics, getRecentCampaigns } from "@/lib/campaigns";
 import { getRecentActivities } from "@/lib/lead-activity";
@@ -10,11 +9,11 @@ import StatusBadge from "@/components/status-badge";
 import EmptyState from "@/components/empty-state";
 import { getOrCreateOnboardingState, getCompletedCount, isOnboardingComplete, getNextStep, ONBOARDING_STEP_LABELS } from "@/lib/onboarding";
 import OnboardingDismissButton from "@/components/onboarding-dismiss-button";
+import { getLaunchReadiness } from "@/lib/launch-readiness";
 import { MetricCard } from "@/components/ui/metric-card";
-import { Card, CardSection } from "@/components/ui/card";
-import { Button, LinkButton } from "@/components/ui/button";
+import { CardSection } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Alert } from "@/components/ui/alert";
+import { LinkButton } from "@/components/ui/button";
 
 function getLocalDateStart(): Date {
   const now = new Date();
@@ -53,19 +52,14 @@ export default async function DashboardPage() {
   const user = await requireUser();
   const session = { userId: user.id, email: user.email || "" };
   const metrics = await getDashboardMetrics(session.userId);
-  const emailStatus = getEmailProviderStatus();
   const nextAction = await computeNextAction(session.userId);
 
   const [
     recentCampaigns,
     sentTodayCount,
     recentActivities,
-    contactedCount,
     repliedCount,
-    meetingsCount,
-    wonCount,
     followUpsDue,
-    newLeadsWaiting,
     queuedCount,
   ] = await Promise.all([
     getRecentCampaigns(session.userId),
@@ -84,6 +78,8 @@ export default async function DashboardPage() {
   const onboardingCompleted = isOnboardingComplete(onboardingState);
   const onboardingCompletedCount = getCompletedCount(onboardingState);
   const onboardingNextStep = getNextStep(onboardingState);
+
+  const launchReadiness = await getLaunchReadiness(session.userId);
 
   return (
     <AppShell activePage="/dashboard" email={session.email}>
@@ -127,6 +123,22 @@ export default async function DashboardPage() {
           </div>
         </CardSection>
       )}
+
+      <CardSection className="border-zinc-800 mb-6">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className={`inline-flex size-3 rounded-full ${launchReadiness.overall === "ready" ? "bg-emerald-500" : launchReadiness.overall === "needs-work" ? "bg-yellow-500" : "bg-rose-500"}`} />
+            <div>
+              <p className="text-sm font-semibold text-white">Personal launch status</p>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                {launchReadiness.overall === "ready" ? "Ready for outreach" : `${launchReadiness.blockerCount} blocker(s), ${launchReadiness.warningCount} warning(s)`}
+                &middot; Next: {launchReadiness.recommendedNextAction}
+              </p>
+            </div>
+          </div>
+          <LinkButton href="/launch" variant="secondary" size="sm">Open Launch Checklist</LinkButton>
+        </div>
+      </CardSection>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
         <MetricCard label="Campaigns" value={metrics.totalCampaigns} />
