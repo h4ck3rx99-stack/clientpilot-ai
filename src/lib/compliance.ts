@@ -94,3 +94,78 @@ export function generateDraftStatus(
   }
   return null;
 }
+
+export type CanGenerateFollowUpDraftInput = {
+  profileExists: boolean;
+  campaignExists: boolean;
+  leadExists: boolean;
+  hasValidEmail: boolean;
+  hasSourceUrl: boolean;
+  isUnsubscribed: boolean;
+  leadPipelineStatus: string;
+  hasSentInitial: boolean;
+  existingFollowUpCount: number;
+  hasActiveFollowUpDraft: boolean;
+  lastContactedAt: Date | null;
+  nextFollowUpAt: Date | null;
+};
+
+export function canGenerateFollowUpDraft(
+  input: CanGenerateFollowUpDraftInput
+): { allowed: boolean; reasons: string[] } {
+  const reasons: string[] = [];
+
+  if (!input.profileExists)
+    reasons.push("Create your profile before generating follow-up drafts.");
+  if (!input.campaignExists) reasons.push("Campaign not found.");
+  if (!input.leadExists) reasons.push("Lead not found.");
+  if (!input.hasValidEmail) reasons.push("Lead must have a valid email address.");
+  if (!input.hasSourceUrl)
+    reasons.push("Lead must have a source URL for compliance.");
+  if (input.isUnsubscribed) reasons.push("This email has unsubscribed.");
+
+  const badStatuses = ["NOT_INTERESTED", "MEETING_BOOKED", "WON", "LOST"];
+  if (badStatuses.includes(input.leadPipelineStatus)) {
+    reasons.push(
+      `Pipeline status "${input.leadPipelineStatus}" is not eligible for follow-ups.`
+    );
+  }
+
+  const allowedStatuses = ["CONTACTED", "REPLIED", "INTERESTED", "FOLLOW_UP"];
+  if (!allowedStatuses.includes(input.leadPipelineStatus)) {
+    reasons.push(
+      `Lead must be CONTACTED, REPLIED, INTERESTED, or FOLLOW_UP (current: ${input.leadPipelineStatus}).`
+    );
+  }
+
+  if (!input.hasSentInitial)
+    reasons.push("Lead must have a sent initial email before follow-up.");
+
+  if (input.existingFollowUpCount >= 2)
+    reasons.push("Maximum 2 follow-ups per lead reached.");
+
+  if (input.hasActiveFollowUpDraft)
+    reasons.push(
+      "An active follow-up draft already exists for this lead."
+    );
+
+  if (input.nextFollowUpAt && input.nextFollowUpAt > new Date()) {
+    reasons.push("Follow-up is not due yet based on nextFollowUpAt.");
+  }
+
+  if (!input.nextFollowUpAt) {
+    if (!input.lastContactedAt) {
+      reasons.push("Lead has not been contacted yet.");
+    } else {
+      const twoDaysAgo = new Date();
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      if (input.lastContactedAt > twoDaysAgo) {
+        reasons.push(
+          "Last contact was less than 2 days ago. Wait before follow-up."
+        );
+      }
+    }
+  }
+
+  return { allowed: reasons.length === 0, reasons };
+}

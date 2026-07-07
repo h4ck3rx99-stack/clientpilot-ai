@@ -44,6 +44,12 @@ export default async function EmailQueuePage({
           </div>
           <div className="flex items-center gap-4">
             <Link
+              href={`/campaigns/${campaignId}/follow-ups`}
+              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              Follow-ups
+            </Link>
+            <Link
               href={`/campaigns/${campaignId}/send-history`}
               className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
             >

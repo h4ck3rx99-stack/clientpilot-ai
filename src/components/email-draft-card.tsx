@@ -6,6 +6,8 @@ type Draft = {
   subject: string;
   body: string;
   status: string;
+  type: string;
+  followUpNumber: number;
   createdAt: Date;
   lead: {
     companyName: string;
@@ -36,6 +38,17 @@ export default function EmailDraftCard({
           <p className="text-xs text-zinc-500 mt-0.5">{draft.lead.email}</p>
         </div>
         <StatusBadge status={draft.status} />
+      </div>
+      <div className="flex items-center gap-2 mb-1">
+        {draft.type === "FOLLOW_UP" ? (
+          <span className="inline-flex items-center rounded-full border border-purple-700/50 bg-purple-950/30 px-2 py-0.5 text-[10px] font-medium text-purple-400">
+            Follow-up #{draft.followUpNumber}
+          </span>
+        ) : (
+          <span className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-800/50 px-2 py-0.5 text-[10px] font-medium text-zinc-400">
+            Initial
+          </span>
+        )}
       </div>
       <p className="text-xs text-zinc-400 font-medium mb-1">{draft.subject}</p>
       <p className="text-xs text-zinc-500 whitespace-pre-wrap leading-relaxed">

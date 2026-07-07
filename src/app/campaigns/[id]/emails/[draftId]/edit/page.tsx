@@ -49,8 +49,28 @@ export default async function EditDraftPage({
                 </p>
               )}
             </div>
-            <StatusBadge status={draft.status} />
+            <div className="flex items-center gap-2">
+              {draft.type === "FOLLOW_UP" && (
+                <span className="inline-flex items-center rounded-full border border-purple-700/50 bg-purple-950/30 px-2 py-0.5 text-[10px] font-medium text-purple-400">
+                  Follow-up #{draft.followUpNumber}
+                </span>
+              )}
+              {draft.type !== "FOLLOW_UP" && (
+                <span className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-800/50 px-2 py-0.5 text-[10px] font-medium text-zinc-400">
+                  Initial
+                </span>
+              )}
+              <StatusBadge status={draft.status} />
+            </div>
           </div>
+
+          {draft.type === "FOLLOW_UP" && (
+            <div className="rounded-lg border border-purple-800/30 bg-purple-950/20 p-3 mb-4">
+              <p className="text-xs text-purple-400">
+                This is a follow-up draft. Keep it short, polite, and low-pressure.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-2 text-xs text-zinc-400">
             {draft.lead.painPoint && (

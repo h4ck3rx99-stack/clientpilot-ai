@@ -73,6 +73,11 @@ export default function PipelineColumn({
                 })}
               </p>
             )}
+            {lead.nextFollowUpAt && new Date(lead.nextFollowUpAt) <= new Date() && (
+              <span className="inline-flex items-center rounded-full border border-rose-700/50 bg-rose-950/30 px-1.5 py-0.5 text-[9px] font-medium text-rose-400">
+                Follow-up due
+              </span>
+            )}
             {lead.notes && (
               <p className="text-[10px] text-zinc-600 line-clamp-2">
                 {lead.notes}

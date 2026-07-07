@@ -66,16 +66,18 @@ model Lead {
 }
 
 model EmailDraft {
-  id        String         @id @default(cuid())
-  leadId    String
-  lead      Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  subject   String
-  body      String
-  status    String         @default("DRAFT")
-  sentAt    DateTime?
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  sendLogs  EmailSendLog[]
+  id              String         @id @default(cuid())
+  leadId          String
+  lead            Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  subject         String
+  body            String
+  status          String         @default("DRAFT")
+  type            String         @default("INITIAL")
+  followUpNumber  Int            @default(0)
+  sentAt          DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  sendLogs        EmailSendLog[]
 }
 
 model EmailSendLog {

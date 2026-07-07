@@ -184,21 +184,42 @@ export async function simulateSendDraft(
       data: { status: "SENT", sentAt: now },
     });
 
+    const isFollowUp = draft.type === "FOLLOW_UP" || draft.followUpNumber > 0;
+
+    const leadUpdateData: Record<string, unknown> = {
+      status: "SENT",
+      lastContactedAt: now,
+    };
+
+    if (isFollowUp) {
+      const keepStatuses = ["INTERESTED", "REPLIED", "MEETING_BOOKED"];
+      if (!keepStatuses.includes(draft.lead.pipelineStatus)) {
+        leadUpdateData.pipelineStatus = "FOLLOW_UP";
+      }
+    } else {
+      leadUpdateData.pipelineStatus = "CONTACTED";
+    }
+
     await prisma.lead.update({
       where: { id: draft.lead.id },
-      data: {
-        status: "SENT",
-        pipelineStatus: "CONTACTED",
-        lastContactedAt: now,
-      },
+      data: leadUpdateData,
     });
 
-    await createLeadActivity({
-      leadId: draft.lead.id,
-      campaignId: draft.lead.campaignId,
-      type: "EMAIL_SENT_SIMULATED",
-      message: `Simulated email sent to ${draft.lead.email}.`,
-    });
+    if (isFollowUp) {
+      await createLeadActivity({
+        leadId: draft.lead.id,
+        campaignId: draft.lead.campaignId,
+        type: "FOLLOW_UP_SENT_SIMULATED",
+        message: `Simulated follow-up #${draft.followUpNumber} sent to ${draft.lead.email}.`,
+      });
+    } else {
+      await createLeadActivity({
+        leadId: draft.lead.id,
+        campaignId: draft.lead.campaignId,
+        type: "EMAIL_SENT_SIMULATED",
+        message: `Simulated email sent to ${draft.lead.email}.`,
+      });
+    }
 
     return {
       status: "sent",

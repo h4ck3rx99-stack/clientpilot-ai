@@ -5,6 +5,7 @@ import { getCampaignById } from "@/lib/campaigns";
 import { getLeadCountForCampaign, getRecentLeadsForCampaign } from "@/lib/leads";
 import { getEmailDraftStatsForCampaign } from "@/lib/email-drafts";
 import { getTodaySendCountForCampaign } from "@/lib/sending";
+import { getFollowUpStatsForCampaign } from "@/lib/follow-ups";
 import StatusBadge from "@/components/status-badge";
 import FitScoreBadge from "@/components/fit-score-badge";
 import CampaignControls from "./campaign-controls";
@@ -15,18 +16,26 @@ export default async function CampaignDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [campaign, leadCount, recentLeads, leadStats, emailStats, sentToday] =
-    await Promise.all([
-      getCampaignById(id),
-      getLeadCountForCampaign(id),
-      getRecentLeadsForCampaign(id, 5),
-      prisma.lead.aggregate({
-        where: { campaignId: id },
-        _avg: { fitScore: true },
-      }),
-      getEmailDraftStatsForCampaign(id),
-      getTodaySendCountForCampaign(id),
-    ]);
+  const [
+    campaign,
+    leadCount,
+    recentLeads,
+    leadStats,
+    emailStats,
+    sentToday,
+    followUpStats,
+  ] = await Promise.all([
+    getCampaignById(id),
+    getLeadCountForCampaign(id),
+    getRecentLeadsForCampaign(id, 5),
+    prisma.lead.aggregate({
+      where: { campaignId: id },
+      _avg: { fitScore: true },
+    }),
+    getEmailDraftStatsForCampaign(id),
+    getTodaySendCountForCampaign(id),
+    getFollowUpStatsForCampaign(id),
+  ]);
 
   const analyzedCount = await prisma.lead.count({
     where: { campaignId: id, status: "ANALYZED" },
@@ -231,6 +240,39 @@ export default async function CampaignDetailPage({
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-white">
+              Follow-ups
+            </h2>
+            <Link
+              href={`/campaigns/${campaign.id}/follow-ups`}
+              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              Open Follow-up Queue
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-lg bg-zinc-800/50 p-2.5 text-center">
+              <p className="text-sm font-bold text-rose-400">{followUpStats.due}</p>
+              <p className="text-[10px] text-zinc-500">Due</p>
+            </div>
+            <div className="rounded-lg bg-zinc-800/50 p-2.5 text-center">
+              <p className="text-sm font-bold text-yellow-400">{followUpStats.pendingReview}</p>
+              <p className="text-[10px] text-zinc-500">Pending Review</p>
+            </div>
+            <div className="rounded-lg bg-zinc-800/50 p-2.5 text-center">
+              <p className="text-sm font-bold text-blue-400">{followUpStats.queued}</p>
+              <p className="text-[10px] text-zinc-500">Queued</p>
+            </div>
+            <div className="rounded-lg bg-zinc-800/50 p-2.5 text-center">
+              <p className="text-sm font-bold text-green-400">{followUpStats.sent}</p>
+              <p className="text-[10px] text-zinc-500">Sent</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-white">
               Leads ({leadCount})
             </h2>
             <Link
@@ -303,6 +345,12 @@ export default async function CampaignDetailPage({
               Email ({emailStats.total} drafts)
             </h2>
             <div className="flex items-center gap-3">
+              <Link
+                href={`/campaigns/${campaign.id}/follow-ups`}
+                className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                Follow-ups
+              </Link>
               <Link
                 href={`/campaigns/${campaign.id}/pipeline`}
                 className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"

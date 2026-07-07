@@ -4,6 +4,8 @@ export type EmailDraftInput = {
   subject: string;
   body: string;
   status?: string;
+  type?: string;
+  followUpNumber?: number;
 };
 
 export async function getEmailDraftsByCampaignId(campaignId: string) {
@@ -11,7 +13,9 @@ export async function getEmailDraftsByCampaignId(campaignId: string) {
     where: { lead: { campaignId } },
     orderBy: { createdAt: "desc" },
     include: {
-      lead: { select: { companyName: true, email: true, fitScore: true } },
+      lead: {
+        select: { companyName: true, email: true, fitScore: true },
+      },
     },
   });
 }
@@ -31,6 +35,7 @@ export async function getEmailDraftById(id: string) {
           personalizationLine: true,
           sourceUrl: true,
           campaignId: true,
+          pipelineStatus: true,
         },
       },
     },
@@ -39,7 +44,7 @@ export async function getEmailDraftById(id: string) {
 
 export async function createDraftForLead(
   leadId: string,
-  data: { subject: string; body: string; status?: string }
+  data: { subject: string; body: string; status?: string; type?: string; followUpNumber?: number }
 ) {
   return prisma.emailDraft.create({
     data: {
@@ -47,6 +52,8 @@ export async function createDraftForLead(
       subject: data.subject,
       body: data.body,
       status: data.status || "DRAFT",
+      type: data.type || "INITIAL",
+      followUpNumber: data.followUpNumber ?? 0,
     },
   });
 }
@@ -61,6 +68,10 @@ export async function updateEmailDraft(
       ...(data.subject !== undefined && { subject: data.subject }),
       ...(data.body !== undefined && { body: data.body }),
       ...(data.status !== undefined && { status: data.status }),
+      ...(data.type !== undefined && { type: data.type }),
+      ...(data.followUpNumber !== undefined && {
+        followUpNumber: data.followUpNumber,
+      }),
     },
   });
 }

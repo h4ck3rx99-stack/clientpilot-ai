@@ -25,6 +25,7 @@ export default async function DashboardPage() {
     meetingsCount,
     wonCount,
     followUpsDue,
+    fuDraftsPending,
   ] = await Promise.all([
     getRecentCampaigns(),
     prisma.emailSendLog.count({
@@ -60,6 +61,12 @@ export default async function DashboardPage() {
       where: {
         nextFollowUpAt: { lte: new Date() },
         pipelineStatus: { in: ["FOLLOW_UP", "INTERESTED", "REPLIED"] },
+      },
+    }),
+    prisma.emailDraft.count({
+      where: {
+        type: "FOLLOW_UP",
+        status: { in: ["DRAFT", "QUEUED"] },
       },
     }),
   ]);
@@ -103,6 +110,11 @@ export default async function DashboardPage() {
       label: "Follow-ups due",
       value: followUpsDue,
       color: followUpsDue > 0 ? "text-rose-400" : "text-white",
+    },
+    {
+      label: "Follow-up drafts pending",
+      value: fuDraftsPending,
+      color: fuDraftsPending > 0 ? "text-purple-400" : "text-white",
     },
   ];
 
