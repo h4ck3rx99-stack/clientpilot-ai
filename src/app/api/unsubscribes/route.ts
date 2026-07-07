@@ -19,10 +19,7 @@ export async function POST(request: NextRequest) {
   const { email, reason } = body;
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return NextResponse.json(
-      { error: "A valid email is required." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "A valid email is required." }, { status: 400 });
   }
 
   const existing = await prisma.unsubscribe.findUnique({
@@ -30,10 +27,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (existing) {
-    return NextResponse.json(
-      { message: "Email is already in the unsubscribe list.", existing },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: "Email is already in the unsubscribe list.", existing }, { status: 200 });
   }
 
   const record = await prisma.unsubscribe.create({
@@ -43,13 +37,13 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  return NextResponse.json(
-    { message: "Email added to unsubscribe list.", record },
-    { status: 201 }
-  );
+  return NextResponse.json({ message: "Email added to unsubscribe list.", record }, { status: 201 });
 }
 
 export async function GET() {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const records = await prisma.unsubscribe.findMany({
     orderBy: { createdAt: "desc" },
   });

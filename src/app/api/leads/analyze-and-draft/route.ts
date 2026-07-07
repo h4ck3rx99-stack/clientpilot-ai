@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
         campaign: {
           select: {
             id: true,
+            userId: true,
             minimumFitScore: true,
             targetNiche: true,
             serviceToPitch: true,
@@ -32,11 +33,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (!lead) {
+    if (!lead || lead.userId !== session.userId) {
       return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     }
 
-    const profile = await prisma.userProfile.findFirst();
+    const profile = await prisma.userProfile.findFirst({ where: { userId: session.userId } });
     if (!profile) {
       return NextResponse.json({ error: "Create your profile first." }, { status: 400 });
     }
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
       services: profile.services || undefined,
     };
 
-    const intelligence = await generateLeadIntelligence(lead.id);
+    const intelligence = await generateLeadIntelligence(lead.id, session.userId);
 
     if (!intelligence.data) {
       await logAIUsage(session.userId, {
@@ -96,6 +97,7 @@ export async function POST(request: NextRequest) {
       draft = await prisma.emailDraft.create({
         data: {
           leadId: lead.id,
+          userId: session.userId,
           subject: result.emailSubject,
           body: result.emailBody,
           status: "DRAFT",

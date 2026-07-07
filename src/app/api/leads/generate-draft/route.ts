@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth/session";
 import { generateOutreachEmail } from "@/lib/email-template";
 import { canGenerateDraft } from "@/lib/compliance";
 import { hasActiveDraftForLead } from "@/lib/email-drafts";
+import { getProfile } from "@/lib/profile";
 
 export async function POST(request: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { leadId } = await request.json();
   if (!leadId) {
-    return NextResponse.json(
-      { error: "leadId is required" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "leadId is required" }, { status: 400 });
   }
 
   const lead = await prisma.lead.findUnique({
@@ -23,16 +25,17 @@ export async function POST(request: NextRequest) {
           serviceToPitch: true,
           offer: true,
           cta: true,
+          userId: true,
         },
       },
     },
   });
 
-  if (!lead) {
+  if (!lead || lead.userId !== session.userId) {
     return NextResponse.json({ error: "Lead not found" }, { status: 404 });
   }
 
-  const profile = await prisma.userProfile.findFirst();
+  const profile = await getProfile(session.userId);
 
   const compliance = canGenerateDraft({
     profileExists: !!profile,
@@ -46,10 +49,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (!compliance.allowed) {
-    return NextResponse.json(
-      { error: compliance.reasons.join(" ") },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: compliance.reasons.join(" ") }, { status: 400 });
   }
 
   const { subject, body } = generateOutreachEmail({
@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
   const draft = await prisma.emailDraft.create({
     data: {
       leadId: lead.id,
+      userId: session.userId,
       subject,
       body,
       status: "DRAFT",

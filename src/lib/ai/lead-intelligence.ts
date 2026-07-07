@@ -20,10 +20,11 @@ export type GenerateLeadIntelligenceOutput = {
 };
 
 export async function generateLeadIntelligence(
-  leadId: string
+  leadId: string,
+  userId?: string
 ): Promise<{ data?: GenerateLeadIntelligenceOutput; error?: string }> {
   const lead = await prisma.lead.findUnique({
-    where: { id: leadId },
+    where: { id: leadId, ...(userId ? { userId } : {}) },
     include: {
       campaign: {
         select: {
@@ -39,7 +40,7 @@ export async function generateLeadIntelligence(
 
   if (!lead) return { error: "Lead not found" };
 
-  const profile = await prisma.userProfile.findFirst();
+  const profile = await prisma.userProfile.findFirst({ where: userId ? { userId } : {} });
   if (!profile) return { error: "Profile not found" };
 
   const systemPrompt =

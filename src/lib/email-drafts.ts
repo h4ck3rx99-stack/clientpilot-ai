@@ -43,12 +43,14 @@ export async function getEmailDraftById(userId: string, id: string) {
 }
 
 export async function createDraftForLead(
+  userId: string,
   leadId: string,
   data: { subject: string; body: string; status?: string; type?: string; followUpNumber?: number }
 ) {
   return prisma.emailDraft.create({
     data: {
       leadId,
+      userId,
       subject: data.subject,
       body: data.body,
       status: data.status || "DRAFT",
@@ -86,20 +88,22 @@ export async function updateEmailDraftStatus(
   });
 }
 
-export async function getEmailDraftStatsForCampaign(campaignId: string) {
+export async function getEmailDraftStatsForCampaign(campaignId: string, userId?: string) {
+  const userIdFilter = userId ? { userId } : {};
+
   const [total, draft, queued, sent, cancelled] = await Promise.all([
-    prisma.emailDraft.count({ where: { lead: { campaignId } } }),
+    prisma.emailDraft.count({ where: { ...userIdFilter, lead: { campaignId } } }),
     prisma.emailDraft.count({
-      where: { lead: { campaignId }, status: "DRAFT" },
+      where: { ...userIdFilter, lead: { campaignId }, status: "DRAFT" },
     }),
     prisma.emailDraft.count({
-      where: { lead: { campaignId }, status: "QUEUED" },
+      where: { ...userIdFilter, lead: { campaignId }, status: "QUEUED" },
     }),
     prisma.emailDraft.count({
-      where: { lead: { campaignId }, status: "SENT" },
+      where: { ...userIdFilter, lead: { campaignId }, status: "SENT" },
     }),
     prisma.emailDraft.count({
-      where: { lead: { campaignId }, status: "CANCELLED" },
+      where: { ...userIdFilter, lead: { campaignId }, status: "CANCELLED" },
     }),
   ]);
 

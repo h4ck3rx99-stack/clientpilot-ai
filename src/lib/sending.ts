@@ -3,8 +3,6 @@ import { isUnsubscribedPlaceholder } from "./compliance";
 import { createLeadActivity } from "./lead-activity";
 import { sendEmailWithProvider, getEmailProvider } from "./email";
 import { getOrCreateUnsubscribeToken, buildUnsubscribeUrl } from "./unsubscribe";
-import { assertActionAllowed, recordUserAction } from "./rate-limits";
-import type { EmailProviderName } from "./email/providers/types";
 
 function getLocalDateBoundaries(): { start: Date; end: Date } {
   const now = new Date();

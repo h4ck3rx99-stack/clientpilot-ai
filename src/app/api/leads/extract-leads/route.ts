@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth/session";
 import { extractLeadsFromPastedText } from "@/lib/lead-discovery";
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const body = await request.json();
     const { campaignId, sourceUrl, pastedText } = body;
 
@@ -20,22 +24,16 @@ export async function POST(request: NextRequest) {
     }
 
     const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
-    if (!campaign) {
+    if (!campaign || campaign.userId !== session.userId) {
       return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
     }
 
-    const { leads, provider, model } = await extractLeadsFromPastedText(
-      campaign,
-      sourceUrl,
-      pastedText
-    );
+    const { leads, provider, model } = await extractLeadsFromPastedText(campaign, sourceUrl, pastedText);
 
     const aiFailed = provider === "local-rules" && model === "regex-parser";
 
     return NextResponse.json({
-      leads,
-      provider,
-      model,
+      leads, provider, model,
       count: leads.length,
       aiFailed,
       warning: aiFailed ? "AI extraction failed, used local parser instead." : undefined,

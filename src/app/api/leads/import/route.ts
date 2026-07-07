@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { createLead, parseCsvText, validateCsvHeaders, csvRowToInput } from "@/lib/leads";
 import { getSession } from "@/lib/auth/session";
 
@@ -21,6 +22,11 @@ export async function POST(request: NextRequest) {
         { error: "CSV text is required" },
         { status: 400 }
       );
+    }
+
+    const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
+    if (!campaign || campaign.userId !== session.userId) {
+      return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
     }
 
     const { headers, rows } = parseCsvText(csvText);

@@ -3,12 +3,15 @@ import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
 
-const SESSION_COOKIE = "session";
+const SESSION_COOKIE = "clientpilot_session";
 const MAX_AGE_SEC = 7 * 24 * 60 * 60; // 7 days
 
 function getSecret(): Uint8Array {
-  const secret = process.env.AUTH_SECRET || "dev-secret-change-in-production-min-32-chars!!";
-  return new TextEncoder().encode(secret);
+  const secret = process.env.AUTH_SECRET;
+  if (!secret && process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET environment variable is required in production");
+  }
+  return new TextEncoder().encode(secret || "dev-secret-change-in-production");
 }
 
 export type SessionPayload = {
@@ -88,8 +91,4 @@ export async function destroySession() {
   });
 }
 
-export async function logoutAction() {
-  "use server";
-  await destroySession();
-  redirect("/login");
-}
+

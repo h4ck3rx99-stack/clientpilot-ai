@@ -20,13 +20,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "campaignId is required" }, { status: 400 });
     }
 
-    const profile = await prisma.userProfile.findFirst();
+    const profile = await prisma.userProfile.findFirst({ where: { userId: session.userId } });
     if (!profile) {
       return NextResponse.json({ error: "Create your profile first." }, { status: 400 });
     }
 
     const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
-    if (!campaign) {
+    if (!campaign || campaign.userId !== session.userId) {
       return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
     }
 
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     };
 
     const allLeads = await prisma.lead.findMany({
-      where: { campaignId, status: { in: ["NEW", "ANALYZED", "REJECTED"] } },
+      where: { campaignId, userId: session.userId, status: { in: ["NEW", "ANALYZED", "REJECTED"] } },
       take: maxLeads,
     });
 
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     };
 
     for (const lead of allLeads) {
-      const intelligence = await generateLeadIntelligence(lead.id);
+      const intelligence = await generateLeadIntelligence(lead.id, session.userId);
 
       if (!intelligence.data) {
         await logAIUsage(session.userId, {
@@ -107,6 +107,7 @@ export async function POST(request: NextRequest) {
         await prisma.emailDraft.create({
           data: {
             leadId: lead.id,
+            userId: session.userId,
             subject: result.emailSubject,
             body: result.emailBody,
             status: "DRAFT",

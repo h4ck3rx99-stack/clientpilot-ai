@@ -15,10 +15,11 @@ export type FollowUpCandidate = {
 };
 
 export async function getFollowUpCandidatesForCampaign(
-  campaignId: string
+  campaignId: string,
+  userId?: string
 ): Promise<FollowUpCandidate[]> {
   const leads = await prisma.lead.findMany({
-    where: { campaignId },
+    where: { campaignId, ...(userId ? { userId } : {}) },
     include: {
       emailDrafts: {
         where: { type: "FOLLOW_UP" },
@@ -51,7 +52,7 @@ export async function generateFollowUpDraftForLead(
   leadId: string
 ): Promise<GenerateFollowUpResult> {
   const lead = await prisma.lead.findUnique({
-    where: { id: leadId },
+    where: { id: leadId, userId },
     include: { campaign: true, emailDrafts: true },
   });
 
@@ -64,7 +65,7 @@ export async function generateFollowUpDraftForLead(
     };
   }
 
-  const profile = await prisma.userProfile.findFirst();
+  const profile = await prisma.userProfile.findFirst({ where: { userId } });
   const existingFollowUps = lead.emailDrafts.filter(
     (d) => d.type === "FOLLOW_UP"
   );
@@ -182,19 +183,22 @@ export async function generateFollowUpsForCampaign(
   return { generated, skipped, failed, results };
 }
 
-export async function getFollowUpStatsForCampaign(campaignId: string) {
+export async function getFollowUpStatsForCampaign(campaignId: string, userId?: string) {
   const now = new Date();
+  const userIdFilter = userId ? { userId } : {};
 
   const [due, pendingReview, queued, sent] = await Promise.all([
     prisma.lead.count({
       where: {
         campaignId,
+        ...userIdFilter,
         pipelineStatus: { in: ["FOLLOW_UP", "INTERESTED", "REPLIED"] },
         nextFollowUpAt: { lte: now },
       },
     }),
     prisma.emailDraft.count({
       where: {
+        ...userIdFilter,
         lead: { campaignId },
         type: "FOLLOW_UP",
         status: "DRAFT",
@@ -202,6 +206,7 @@ export async function getFollowUpStatsForCampaign(campaignId: string) {
     }),
     prisma.emailDraft.count({
       where: {
+        ...userIdFilter,
         lead: { campaignId },
         type: "FOLLOW_UP",
         status: "QUEUED",
@@ -209,6 +214,7 @@ export async function getFollowUpStatsForCampaign(campaignId: string) {
     }),
     prisma.emailDraft.count({
       where: {
+        ...userIdFilter,
         lead: { campaignId },
         type: "FOLLOW_UP",
         status: "SENT",

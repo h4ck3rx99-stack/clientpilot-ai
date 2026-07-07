@@ -75,6 +75,7 @@ export async function getRecentCampaigns(userId: string, limit = 5) {
     where: { userId },
     orderBy: { createdAt: "desc" },
     take: limit,
+    include: { _count: { select: { leads: true } } },
   });
 }
 

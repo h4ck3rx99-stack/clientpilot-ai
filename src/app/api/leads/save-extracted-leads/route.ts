@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
-    if (!campaign) {
+    if (!campaign || campaign.userId !== session.userId) {
       return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
     }
 

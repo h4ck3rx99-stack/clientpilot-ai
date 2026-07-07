@@ -20,7 +20,7 @@ export async function PUT(request: NextRequest) {
     where: { id: leadId },
   });
 
-  if (!lead) {
+  if (!lead || lead.userId !== session.userId) {
     return NextResponse.json({ error: "Lead not found." }, { status: 404 });
   }
 

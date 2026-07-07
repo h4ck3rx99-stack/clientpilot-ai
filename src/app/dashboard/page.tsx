@@ -3,151 +3,82 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getDashboardMetrics, getRecentCampaigns } from "@/lib/campaigns";
 import { getRecentActivities } from "@/lib/lead-activity";
-import { getEmailProviderStatus, getEmailProvider } from "@/lib/email";
-import { getSession } from "@/lib/auth/session";
-import ProfileSummaryCard from "@/components/profile-summary-card";
+import { getEmailProviderStatus } from "@/lib/email";
+import { requireUser } from "@/lib/auth/session";
+import AppShell from "@/components/app-shell";
 import StatusBadge from "@/components/status-badge";
 import EmptyState from "@/components/empty-state";
-import SetupStatusCard from "@/components/setup-status-card";
 import { getOrCreateOnboardingState, getCompletedCount, isOnboardingComplete, getNextStep, ONBOARDING_STEP_LABELS } from "@/lib/onboarding";
 import OnboardingDismissButton from "@/components/onboarding-dismiss-button";
+import { MetricCard } from "@/components/ui/metric-card";
+import { Card, CardSection } from "@/components/ui/card";
+import { Button, LinkButton } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Alert } from "@/components/ui/alert";
 
 function getLocalDateStart(): Date {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
-export default async function DashboardPage() {
-  const session = await getSession();
-  if (!session) redirect("/login");
-  const metrics = await getDashboardMetrics(session.userId);
+async function computeNextAction(userId: string): Promise<{ label: string; href: string } | null> {
+  const profile = await prisma.userProfile.findFirst({ where: { userId }, select: { id: true, businessName: true } });
+  if (!profile || !profile.businessName) return { label: "Complete your profile", href: "/profile" };
 
+  const campaignCount = await prisma.campaign.count({ where: { userId } });
+  if (campaignCount === 0) return { label: "Create your first campaign", href: "/campaigns/new" };
+
+  const leadCount = await prisma.lead.count({ where: { userId } });
+  if (leadCount === 0) return { label: "Add or discover leads", href: `/campaigns` };
+
+  const analyzedCount = await prisma.lead.count({ where: { userId, status: { in: ["ANALYZED", "REJECTED"] } } });
+  if (analyzedCount === 0) return { label: "Analyze your leads", href: `/campaigns` };
+
+  const highFit = await prisma.lead.count({ where: { userId, status: "ANALYZED", fitScore: { gte: 60 } } });
+  const draftCount = await prisma.emailDraft.count({ where: { userId } });
+  if (highFit > 0 && draftCount === 0) return { label: "Generate drafts", href: `/campaigns` };
+
+  const queuedCount = await prisma.emailDraft.count({ where: { userId, status: "QUEUED" } });
+  if (draftCount > 0 && queuedCount === 0) return { label: "Review and queue drafts", href: `/campaigns` };
+
+  if (queuedCount > 0) return { label: "Run simulated send", href: `/campaigns` };
+
+  const sentCount = await prisma.emailSendLog.count({ where: { userId, status: "SENT" } });
+  if (sentCount > 0) return { label: "Track replies and follow-ups", href: `/campaigns` };
+
+  return null;
+}
+
+export default async function DashboardPage() {
+  const user = await requireUser();
+  const session = { userId: user.id, email: user.email || "" };
+  const metrics = await getDashboardMetrics(session.userId);
   const emailStatus = getEmailProviderStatus();
+  const nextAction = await computeNextAction(session.userId);
 
   const [
     recentCampaigns,
     sentTodayCount,
-    unsubCount,
-    recentSends,
     recentActivities,
     contactedCount,
     repliedCount,
     meetingsCount,
     wonCount,
     followUpsDue,
-    fuDraftsPending,
-    recentAiUsage,
     newLeadsWaiting,
+    queuedCount,
   ] = await Promise.all([
     getRecentCampaigns(session.userId),
-    prisma.emailSendLog.count({
-      where: {
-        status: "SENT",
-        simulated: true,
-        sentAt: { gte: getLocalDateStart() },
-      },
-    }),
-    prisma.unsubscribe.count(),
-    prisma.emailSendLog.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      include: {
-        lead: { select: { companyName: true } },
-        campaign: { select: { name: true, id: true } },
-      },
-    }),
+    prisma.emailSendLog.count({ where: { status: "SENT", simulated: true, sentAt: { gte: getLocalDateStart() } } }),
     getRecentActivities(session.userId, 5),
-    prisma.lead.count({
-      where: { pipelineStatus: { not: "NOT_CONTACTED" } },
-    }),
-    prisma.lead.count({
-      where: { pipelineStatus: "REPLIED" },
-    }),
-    prisma.lead.count({
-      where: { pipelineStatus: "MEETING_BOOKED" },
-    }),
-    prisma.lead.count({
-      where: { pipelineStatus: "WON" },
-    }),
-    prisma.lead.count({
-      where: {
-        nextFollowUpAt: { lte: new Date() },
-        pipelineStatus: { in: ["FOLLOW_UP", "INTERESTED", "REPLIED"] },
-      },
-    }),
-    prisma.emailDraft.count({
-      where: {
-        type: "FOLLOW_UP",
-        status: { in: ["DRAFT", "QUEUED"] },
-      },
-    }),
-    prisma.aIUsageLog.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    }),
-    prisma.lead.count({
-      where: { status: "NEW" },
-    }),
+    prisma.lead.count({ where: { pipelineStatus: { not: "NOT_CONTACTED" } } }),
+    prisma.lead.count({ where: { pipelineStatus: "REPLIED" } }),
+    prisma.lead.count({ where: { pipelineStatus: "MEETING_BOOKED" } }),
+    prisma.lead.count({ where: { pipelineStatus: "WON" } }),
+    prisma.lead.count({ where: { nextFollowUpAt: { lte: new Date() }, pipelineStatus: { in: ["FOLLOW_UP", "INTERESTED", "REPLIED"] } } }),
+    prisma.lead.count({ where: { status: "NEW" } }),
+    prisma.emailDraft.count({ where: { status: "QUEUED" } }),
   ]);
-
-  const realSentToday = await prisma.emailSendLog.count({
-    where: { realSend: true, status: "SENT", sentAt: { gte: getLocalDateStart() } },
-  });
-  const realFailedToday = await prisma.emailSendLog.count({
-    where: { realSend: true, status: "FAILED", sentAt: { gte: getLocalDateStart() } },
-  });
-
-  const cards = [
-    { label: "Total campaigns", value: metrics.totalCampaigns },
-    { label: "Total leads", value: metrics.totalLeads },
-    { label: "High-fit leads", value: metrics.highFitLeads },
-    { label: "Drafts pending", value: metrics.draftsPending },
-    {
-      label: "Sent today",
-      value: sentTodayCount,
-      color: sentTodayCount > 0 ? "text-blue-400" : "text-white",
-    },
-    {
-      label: "Unsubscribed",
-      value: unsubCount,
-      color: unsubCount > 0 ? "text-red-400" : "text-white",
-    },
-    {
-      label: "Contacted",
-      value: contactedCount,
-      color: contactedCount > 0 ? "text-blue-400" : "text-white",
-    },
-    {
-      label: "Replies",
-      value: repliedCount,
-      color: repliedCount > 0 ? "text-green-400" : "text-white",
-    },
-    {
-      label: "Meetings",
-      value: meetingsCount,
-      color: meetingsCount > 0 ? "text-yellow-400" : "text-white",
-    },
-    {
-      label: "Won",
-      value: wonCount,
-      color: wonCount > 0 ? "text-emerald-400" : "text-white",
-    },
-    {
-      label: "Follow-ups due",
-      value: followUpsDue,
-      color: followUpsDue > 0 ? "text-rose-400" : "text-white",
-    },
-    {
-      label: "Follow-up drafts pending",
-      value: fuDraftsPending,
-      color: fuDraftsPending > 0 ? "text-purple-400" : "text-white",
-    },
-    {
-      label: "New leads waiting for analysis",
-      value: newLeadsWaiting,
-      color: newLeadsWaiting > 0 ? "text-amber-400" : "text-white",
-    },
-  ];
 
   const onboardingState = await getOrCreateOnboardingState(session.userId);
   const onboardingCompleted = isOnboardingComplete(onboardingState);
@@ -155,325 +86,108 @@ export default async function DashboardPage() {
   const onboardingNextStep = getNextStep(onboardingState);
 
   return (
-    <>
-      <header className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="size-7 rounded-lg bg-indigo-500 flex items-center justify-center text-xs font-bold text-white">
-              CP
-            </div>
-            <span className="text-sm font-semibold">ClientPilot AI</span>
-          </Link>
-        </div>
-        <nav className="flex items-center gap-6 text-sm">
-          <Link href="/dashboard" className="text-white font-medium">Dashboard</Link>
-          <Link href="/onboarding" className="text-zinc-400 hover:text-white transition-colors">Onboarding</Link>
-          <Link href="/profile" className="text-zinc-400 hover:text-white transition-colors">Profile</Link>
-          <Link href="/campaigns" className="text-zinc-400 hover:text-white transition-colors">Campaigns</Link>
-          <Link href="/campaigns/new" className="text-zinc-400 hover:text-white transition-colors">New Campaign</Link>
-          <Link href="/unsubscribes" className="text-zinc-400 hover:text-white transition-colors">Unsubscribes</Link>
-          <Link href="/settings/ai" className="text-zinc-400 hover:text-white transition-colors">AI Settings</Link>
-          <Link href="/settings/email" className="text-zinc-400 hover:text-white transition-colors">Email Settings</Link>
-          {process.env.NODE_ENV !== "production" && (
-            <Link href="/settings/dev-tools" className="text-zinc-400 hover:text-white transition-colors">Dev Tools</Link>
-          )}
-        </nav>
-      </header>
+    <AppShell activePage="/dashboard" email={session.email}>
+      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
 
-      <main className="flex-1 px-6 py-8 max-w-5xl mx-auto w-full">
-        <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-
-        {!onboardingState.dismissed && !onboardingCompleted && (
-          <div className="rounded-xl border border-indigo-800/30 bg-indigo-950/10 p-5 mb-6 flex items-center justify-between gap-4">
+      {!onboardingState.dismissed && !onboardingCompleted && (
+        <CardSection className="border-indigo-800/30 bg-indigo-950/10 mb-6">
+          <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-indigo-300">Finish setup</p>
-              <p className="text-xs text-zinc-500 mt-1">
-                {onboardingCompletedCount} of 7 complete &middot; Next: {onboardingNextStep ? ONBOARDING_STEP_LABELS[onboardingNextStep] : "—"}
-              </p>
+              <p className="text-xs text-zinc-500 mt-1">{onboardingCompletedCount} of 7 complete &middot; Next: {onboardingNextStep ? ONBOARDING_STEP_LABELS[onboardingNextStep] : "—"}</p>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              <Link
-                href="/onboarding"
-                className="inline-flex h-9 items-center justify-center rounded-lg bg-indigo-500 px-4 text-xs font-medium text-white hover:bg-indigo-400 transition-colors"
-              >
-                Continue Setup
-              </Link>
+              <LinkButton href="/onboarding" variant="primary" size="sm">Continue Setup</LinkButton>
               <OnboardingDismissButton />
             </div>
           </div>
-        )}
+        </CardSection>
+      )}
 
-        {onboardingCompleted && !onboardingState.dismissed && (
-          <div className="rounded-xl border border-emerald-800/30 bg-emerald-950/10 p-5 mb-6 flex items-center justify-between gap-4">
+      {onboardingCompleted && !onboardingState.dismissed && (
+        <CardSection className="border-emerald-800/30 bg-emerald-950/10 mb-6">
+          <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-emerald-300">ClientPilot is ready.</p>
               <p className="text-xs text-zinc-500 mt-1">All 7 onboarding steps are complete.</p>
             </div>
             <OnboardingDismissButton />
           </div>
-        )}
+        </CardSection>
+      )}
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
-          {cards.map((card) => (
-            <div
-              key={card.label}
-              className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5"
-            >
-              <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">
-                {card.label}
-              </p>
-              <p
-                className={`text-3xl font-bold ${
-                  card.color || "text-white"
-                }`}
-              >
-                {card.value}
-              </p>
+      {nextAction && (
+        <CardSection className="border-indigo-800/30 mb-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs text-zinc-500 uppercase tracking-wider">Next best action</p>
+              <p className="text-sm font-semibold text-white mt-0.5">{nextAction.label}</p>
             </div>
-          ))}
+            <LinkButton href={nextAction.href} variant="primary" size="sm">Go</LinkButton>
+          </div>
+        </CardSection>
+      )}
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+        <MetricCard label="Campaigns" value={metrics.totalCampaigns} />
+        <MetricCard label="Leads" value={metrics.totalLeads} />
+        <MetricCard label="High-fit" value={metrics.highFitLeads} color="text-emerald-400" />
+        <MetricCard label="Drafts" value={metrics.draftsPending} color="text-yellow-400" />
+        <MetricCard label="Queued" value={queuedCount} color="text-blue-400" />
+        <MetricCard label="Sent today" value={sentTodayCount} color={sentTodayCount > 0 ? "text-blue-400" : "text-white"} />
+        <MetricCard label="Follow-ups due" value={followUpsDue} color={followUpsDue > 0 ? "text-rose-400" : "text-white"} />
+        <MetricCard label="Replies" value={repliedCount} color={repliedCount > 0 ? "text-green-400" : "text-white"} />
+      </div>
+
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-white">Recent Campaigns</h2>
+          <Link href="/campaigns" className="text-xs text-indigo-400 hover:text-indigo-300">View all</Link>
         </div>
-
-        <section className="mb-10">
-          <h2 className="text-lg font-semibold mb-3">Profile</h2>
-          <ProfileSummaryCard />
-        </section>
-
-        <section className="mb-10">
-          <SetupStatusCard userId={session.userId} />
-        </section>
-
-        <section className="mb-10">
-          <h2 className="text-lg font-semibold mb-3">Email Provider</h2>
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-            <div className="flex items-center gap-3 mb-4">
-              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium uppercase ${
-                emailStatus.mode === "smtp"
-                  ? "border border-indigo-700/50 bg-indigo-950/30 text-indigo-400"
-                  : "border border-zinc-700 bg-zinc-800/50 text-zinc-400"
-              }`}>
-                {emailStatus.mode}
-              </span>
-              <span className="text-xs text-zinc-400">
-                {emailStatus.smtpConfigured ? "SMTP configured" : "SMTP not configured"}
-              </span>
-            </div>
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-lg bg-zinc-800/50 p-3">
-                <p className="text-xs text-zinc-500">Real Sent Today</p>
-                <p className="text-lg font-semibold text-blue-400">{realSentToday}</p>
-              </div>
-              <div className="rounded-lg bg-zinc-800/50 p-3">
-                <p className="text-xs text-zinc-500">Real Failed Today</p>
-                <p className="text-lg font-semibold text-red-400">{realFailedToday}</p>
-              </div>
-              <div className="rounded-lg bg-zinc-800/50 p-3">
-                <p className="text-xs text-zinc-500">Daily Limit</p>
-                <p className="text-lg font-semibold text-white">{process.env.REAL_SEND_DAILY_LIMIT || "20"}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {recentSends.length > 0 && (
-          <section className="mb-10">
-            <h2 className="text-lg font-semibold mb-3">Recent Send Activity</h2>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-zinc-800 text-left text-xs text-zinc-500 uppercase tracking-wider">
-                      <th className="pb-3 pr-4 pt-3 pl-5 font-medium">
-                        Recipient
-                      </th>
-                      <th className="pb-3 pr-4 pt-3 font-medium">Status</th>
-                      <th className="pb-3 pr-4 pt-3 font-medium">Campaign</th>
-                      <th className="pb-3 pr-3 pt-3 font-medium">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentSends.map((log) => (
-                      <tr
-                        key={log.id}
-                        className="border-b border-zinc-800/50 last:border-0"
-                      >
-                        <td className="py-3 pr-4 pl-5 text-white">
-                          {log.lead.companyName}
-                          <span className="text-zinc-500 ml-1">
-                            ({log.recipientEmail})
-                          </span>
-                        </td>
-                        <td className="py-3 pr-4">
-                          <StatusBadge status={log.status} />
-                        </td>
-                        <td className="py-3 pr-4">
-                          <Link
-                            href={`/campaigns/${log.campaign.id}`}
-                            className="text-indigo-400 hover:text-indigo-300 transition-colors text-xs"
-                          >
-                            {log.campaign.name}
-                          </Link>
-                        </td>
-                        <td className="py-3 pr-3 text-zinc-500 whitespace-nowrap text-xs">
-                          {new Date(log.createdAt).toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {recentActivities.length > 0 && (
-          <section className="mb-10">
-            <h2 className="text-lg font-semibold mb-3">Recent Activity</h2>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-zinc-800 text-left text-xs text-zinc-500 uppercase tracking-wider">
-                      <th className="pb-3 pr-4 pt-3 pl-5 font-medium">Date</th>
-                      <th className="pb-3 pr-4 pt-3 font-medium">Type</th>
-                      <th className="pb-3 pr-4 pt-3 font-medium">Lead</th>
-                      <th className="pb-3 pr-4 pt-3 font-medium">Campaign</th>
-                      <th className="pb-3 pr-3 pt-3 font-medium">Message</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentActivities.map((a) => (
-                      <tr
-                        key={a.id}
-                        className="border-b border-zinc-800/50 last:border-0"
-                      >
-                        <td className="py-3 pr-4 pl-5 text-zinc-500 whitespace-nowrap text-xs">
-                          {new Date(a.createdAt).toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </td>
-                        <td className="py-3 pr-4">
-                          <span className="text-xs text-zinc-400 uppercase tracking-wider">
-                            {a.type}
-                          </span>
-                        </td>
-                        <td className="py-3 pr-4 text-white text-xs">
-                          {a.lead.companyName}
-                        </td>
-                        <td className="py-3 pr-4">
-                          <Link
-                            href={`/campaigns/${a.campaign.id}`}
-                            className="text-indigo-400 hover:text-indigo-300 transition-colors text-xs"
-                          >
-                            {a.campaign.name}
-                          </Link>
-                        </td>
-                        <td className="py-3 pr-3 text-xs text-zinc-400 max-w-[200px] truncate">
-                          {a.message}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {recentAiUsage.length > 0 && (
-          <section className="mb-10">
-            <h2 className="text-lg font-semibold mb-3">AI Usage</h2>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-zinc-800 text-left text-xs text-zinc-500 uppercase tracking-wider">
-                      <th className="pb-3 pr-4 pt-3 pl-5 font-medium">Date</th>
-                      <th className="pb-3 pr-4 pt-3 font-medium">Provider</th>
-                      <th className="pb-3 pr-4 pt-3 font-medium">Model</th>
-                      <th className="pb-3 pr-4 pt-3 font-medium">Task</th>
-                      <th className="pb-3 pr-3 pt-3 font-medium">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentAiUsage.map((log) => (
-                      <tr key={log.id} className="border-b border-zinc-800/50 last:border-0">
-                        <td className="py-3 pr-4 pl-5 text-zinc-500 whitespace-nowrap text-xs">
-                          {new Date(log.createdAt).toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </td>
-                        <td className="py-3 pr-4 text-xs text-zinc-300 capitalize">{log.provider.replace("-", " ")}</td>
-                        <td className="py-3 pr-4 text-xs text-zinc-400">{log.model}</td>
-                        <td className="py-3 pr-4 text-xs text-zinc-400">{log.taskType.replace(/_/g, " ")}</td>
-                        <td className="py-3 pr-3">
-                          <span
-                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                              log.success
-                                ? "border border-green-700/50 bg-green-950/30 text-green-400"
-                                : "border border-rose-700/50 bg-rose-950/30 text-rose-400"
-                            }`}
-                          >
-                            {log.success ? "Success" : "Failed"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-        )}
-
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Recent campaigns</h2>
-            <Link
-              href="/campaigns"
-              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-            >
-              View all
-            </Link>
-          </div>
-          {recentCampaigns.length === 0 ? (
-            <EmptyState
-              title="No campaigns yet."
-              description="Create your first one to get started."
-              actionLabel="Create Campaign"
-              actionHref="/campaigns/new"
-            />
-          ) : (
-            <div className="space-y-3">
-              {recentCampaigns.map((c) => (
-                <Link key={c.id} href={`/campaigns/${c.id}`}>
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 flex items-center justify-between hover:bg-zinc-900/80 transition-colors">
-                    <div>
-                      <p className="text-sm font-medium text-white">
-                        {c.name}
-                      </p>
-                      <p className="text-xs text-zinc-500 mt-0.5">
-                        {c.targetNiche} &middot; {c.targetLocation}
-                      </p>
-                    </div>
+        {recentCampaigns.length === 0 ? (
+          <EmptyState title="No campaigns yet." description="Create your first one to get started." actionLabel="Create Campaign" actionHref="/campaigns/new" />
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {recentCampaigns.map((c) => (
+              <Link key={c.id} href={`/campaigns/${c.id}`} className="block">
+                <CardSection>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-white truncate">{c.name}</span>
                     <StatusBadge status={c.status} />
                   </div>
-                </Link>
+                  <p className="text-xs text-zinc-500">{c.targetNiche} &middot; {c.targetLocation}</p>
+                  <div className="flex gap-3 mt-2 text-[10px] text-zinc-600">
+                    <span>{c._count.leads} leads</span>
+                  </div>
+                </CardSection>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {recentActivities.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-white mb-3">Recent Activity</h2>
+          <CardSection>
+            <div className="space-y-2">
+              {recentActivities.map((a) => (
+                <div key={a.id} className="flex items-start gap-3 text-xs border-b border-zinc-800/50 pb-2 last:border-0">
+                  <Badge variant={a.type.includes("SENT") ? "success" : a.type.includes("FAILED") ? "danger" : a.type.includes("DRAFT") ? "info" : "default"}>
+                    {a.type.replace(/_/g, " ")}
+                  </Badge>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-zinc-300">{a.lead.companyName}</span>
+                    <span className="text-zinc-600 mx-1">&middot;</span>
+                    <span className="text-zinc-500">{a.message}</span>
+                  </div>
+                  <span className="text-zinc-600 whitespace-nowrap">{new Date(a.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                </div>
               ))}
             </div>
-          )}
+          </CardSection>
         </section>
-      </main>
-    </>
+      )}
+    </AppShell>
   );
 }

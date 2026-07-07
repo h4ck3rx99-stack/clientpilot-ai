@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth/session";
+import { updateEmailDraft } from "@/lib/email-drafts";
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
   const body = await request.json();
 
   const existing = await prisma.emailDraft.findUnique({ where: { id } });
   if (!existing) {
-    return NextResponse.json(
-      { error: "Email draft not found" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Email draft not found" }, { status: 404 });
+  }
+  if (existing.userId !== session.userId) {
+    return NextResponse.json({ error: "Email draft not found" }, { status: 404 });
   }
 
   const errors: string[] = [];
@@ -39,10 +44,7 @@ export async function PUT(
   if (body.body !== undefined) updateData.body = body.body;
   if (body.status !== undefined) updateData.status = body.status;
 
-  const updated = await prisma.emailDraft.update({
-    where: { id },
-    data: updateData,
-  });
+  const updated = await updateEmailDraft(id, updateData);
 
   return NextResponse.json({ draft: updated });
 }

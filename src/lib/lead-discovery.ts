@@ -1,5 +1,4 @@
 import { prisma } from "./prisma";
-import { safeParseJson } from "./ai/safety";
 import { generateJsonWithFallback } from "./ai";
 
 export type ExtractedLead = {
@@ -116,7 +115,6 @@ function localExtractLeads(
   defaultIndustry: string
 ): ExtractedLead[] {
   const emails = extractEmails(text);
-  const urls = extractUrls(text);
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
   const leads: ExtractedLead[] = [];
   const seen = new Set<string>();
