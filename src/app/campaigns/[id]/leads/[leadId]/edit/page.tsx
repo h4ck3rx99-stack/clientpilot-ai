@@ -1,9 +1,10 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCampaignById } from "@/lib/campaigns";
 import { getLeadById } from "@/lib/leads";
 import { getLeadActivities } from "@/lib/lead-activity";
+import { getSession } from "@/lib/auth/session";
 import LeadForm from "@/components/lead-form";
 import LeadManageForm from "@/components/lead-manage-form";
 import ActivityTimeline from "@/components/activity-timeline";
@@ -18,10 +19,12 @@ export default async function EditLeadPage({
 }: {
   params: Promise<{ id: string; leadId: string }>;
 }) {
+  const session = await getSession();
+  if (!session) redirect("/login");
   const { id, leadId } = await params;
   const [campaign, lead] = await Promise.all([
-    getCampaignById(id),
-    getLeadById(leadId),
+    getCampaignById(session.userId, id),
+    getLeadById(session.userId, leadId),
   ]);
 
   if (!campaign || !lead) notFound();

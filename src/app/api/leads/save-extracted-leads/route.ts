@@ -4,9 +4,12 @@ import { createLead } from "@/lib/leads";
 import { createLeadActivity } from "@/lib/lead-activity";
 import { findDuplicateLeadByEmail, validateExtractedLead } from "@/lib/lead-discovery";
 import type { ExtractedLead } from "@/lib/lead-discovery";
+import { getSession } from "@/lib/auth/session";
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const body = await request.json();
     const { campaignId, leads } = body as {
       campaignId: string;
@@ -42,7 +45,7 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      const created = await createLead(campaignId, {
+      const created = await createLead(session.userId, campaignId, {
         companyName: lead.companyName,
         website: lead.website,
         email: lead.email,
@@ -56,7 +59,7 @@ export async function POST(request: NextRequest) {
       });
 
       try {
-        await createLeadActivity({
+        await createLeadActivity(session.userId, {
           leadId: created.id,
           campaignId,
           type: "LEAD_DISCOVERED",

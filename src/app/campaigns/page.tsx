@@ -1,10 +1,14 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getCampaigns } from "@/lib/campaigns";
+import { getSession } from "@/lib/auth/session";
 import CampaignCard from "@/components/campaign-card";
 import EmptyState from "@/components/empty-state";
 
 export default async function CampaignsPage() {
-  const campaigns = await getCampaigns();
+  const session = await getSession();
+  if (!session) redirect("/login");
+  const campaigns = await getCampaigns(session.userId);
 
   return (
     <>

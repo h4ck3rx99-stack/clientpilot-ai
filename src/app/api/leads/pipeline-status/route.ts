@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createLeadActivity } from "@/lib/lead-activity";
+import { getSession } from "@/lib/auth/session";
 
 const VALID_STATUSES = [
   "NOT_CONTACTED",
@@ -15,6 +16,8 @@ const VALID_STATUSES = [
 ];
 
 export async function PUT(request: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { leadId, pipelineStatus } = await request.json();
 
   if (!leadId || !pipelineStatus) {
@@ -53,7 +56,7 @@ export async function PUT(request: NextRequest) {
     data: updateData,
   });
 
-  await createLeadActivity({
+  await createLeadActivity(session.userId, {
     leadId: lead.id,
     campaignId: lead.campaignId,
     type: "STATUS_CHANGED",

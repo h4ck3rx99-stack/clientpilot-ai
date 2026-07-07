@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getEmailDraftById } from "@/lib/email-drafts";
 import { getEmailProviderStatus } from "@/lib/email";
+import { getSession } from "@/lib/auth/session";
 import EmailDraftForm from "@/components/email-draft-form";
 import StatusBadge from "@/components/status-badge";
 
@@ -10,9 +11,11 @@ export default async function EditDraftPage({
 }: {
   params: Promise<{ id: string; draftId: string }>;
 }) {
+  const session = await getSession();
+  if (!session) redirect("/login");
   const { id: campaignId, draftId } = await params;
 
-  const draft = await getEmailDraftById(draftId);
+  const draft = await getEmailDraftById(session.userId, draftId);
   if (!draft || draft.lead.campaignId !== campaignId) notFound();
 
   const emailStatus = getEmailProviderStatus();

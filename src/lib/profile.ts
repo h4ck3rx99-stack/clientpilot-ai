@@ -10,13 +10,13 @@ export type ProfileData = {
   defaultCTA: string;
 };
 
-export async function getProfile() {
-  return prisma.userProfile.findFirst({ orderBy: { createdAt: "asc" } });
+export async function getProfile(userId: string) {
+  return prisma.userProfile.findFirst({ where: { userId } });
 }
 
-export async function upsertProfile(data: ProfileData) {
+export async function upsertProfile(userId: string, data: ProfileData) {
   const existing = await prisma.userProfile.findFirst({
-    orderBy: { createdAt: "asc" },
+    where: { userId },
   });
 
   if (existing) {
@@ -26,5 +26,5 @@ export async function upsertProfile(data: ProfileData) {
     });
   }
 
-  return prisma.userProfile.create({ data });
+  return prisma.userProfile.create({ data: { ...data, userId } });
 }

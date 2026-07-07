@@ -8,9 +8,9 @@ export type EmailDraftInput = {
   followUpNumber?: number;
 };
 
-export async function getEmailDraftsByCampaignId(campaignId: string) {
+export async function getEmailDraftsByCampaignId(userId: string, campaignId: string) {
   return prisma.emailDraft.findMany({
-    where: { lead: { campaignId } },
+    where: { userId, lead: { campaignId } },
     orderBy: { createdAt: "desc" },
     include: {
       lead: {
@@ -20,9 +20,9 @@ export async function getEmailDraftsByCampaignId(campaignId: string) {
   });
 }
 
-export async function getEmailDraftById(id: string) {
-  return prisma.emailDraft.findUnique({
-    where: { id },
+export async function getEmailDraftById(userId: string, id: string) {
+  return prisma.emailDraft.findFirst({
+    where: { id, userId },
     include: {
       lead: {
         select: {

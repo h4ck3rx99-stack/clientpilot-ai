@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { getEmailProviderStatus } from "@/lib/email";
+import { getSession } from "@/lib/auth/session";
+import SetupStatusCard from "@/components/setup-status-card";
 
 export default async function EmailSettingsPage() {
+  const session = await getSession();
   const status = getEmailProviderStatus();
+  const dailyLimit = parseInt(process.env.REAL_SEND_DAILY_LIMIT || "20", 10);
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -14,6 +18,10 @@ export default async function EmailSettingsPage() {
               <span className="font-semibold">ClientPilot AI</span>
             </Link>
             <Link href="/dashboard" className="text-zinc-400 hover:text-white transition-colors">Dashboard</Link>
+            <Link href="/onboarding" className="text-zinc-400 hover:text-white transition-colors">Onboarding</Link>
+            <Link href="/profile" className="text-zinc-400 hover:text-white transition-colors">Profile</Link>
+            <Link href="/campaigns" className="text-zinc-400 hover:text-white transition-colors">Campaigns</Link>
+            <Link href="/settings/ai" className="text-zinc-400 hover:text-white transition-colors">AI Settings</Link>
             <Link href="/settings/email" className="text-white font-medium">Email Settings</Link>
           </nav>
         </div>
@@ -21,6 +29,32 @@ export default async function EmailSettingsPage() {
 
       <main className="flex-1 px-6 py-8 max-w-3xl mx-auto w-full">
         <h1 className="text-2xl font-bold mb-6">Email Settings</h1>
+
+        {session && (
+          <div className="mb-8">
+            <SetupStatusCard userId={session.userId} />
+          </div>
+        )}
+
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-white mb-3">Recommended Safe Testing Flow</h2>
+          <div className="rounded-xl border border-indigo-800/30 bg-indigo-950/10 p-5 space-y-2">
+            {[
+              { step: "1", label: "Keep EMAIL_MODE=simulation" },
+              { step: "2", label: "Generate and queue drafts" },
+              { step: "3", label: "Run simulated send" },
+              { step: "4", label: "Check send history" },
+              { step: "5", label: "Configure SMTP credentials" },
+              { step: "6", label: "Switch EMAIL_MODE=smtp only when ready" },
+              { step: "7", label: "Start with low daily limit" },
+            ].map((item) => (
+              <div key={item.step} className="flex items-center gap-3 text-xs">
+                <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-[10px] font-bold text-indigo-400">{item.step}</span>
+                <span className="text-zinc-300">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section className="mb-8">
           <h2 className="text-sm font-semibold text-white mb-3">Email Mode</h2>
@@ -45,6 +79,14 @@ export default async function EmailSettingsPage() {
                 </p>
               </div>
             )}
+
+            {status.mode === "smtp" && status.smtpConfigured && dailyLimit > 50 && (
+              <div className="rounded-lg border border-rose-800/30 bg-rose-950/20 p-3 mt-4">
+                <p className="text-xs text-rose-400">
+                  REAL_SEND_DAILY_LIMIT is {dailyLimit}. For safe sending, keep it at 50 or below.
+                </p>
+              </div>
+            )}
           </div>
         </section>
 
@@ -66,7 +108,7 @@ export default async function EmailSettingsPage() {
                   { label: "From Email", value: status.fromEmail || "—" },
                   { label: "SMTP Configured", value: status.smtpConfigured ? "Yes" : "No" },
                   { label: "EMAIL_MODE", value: status.mode },
-                  { label: "REAL_SEND_DAILY_LIMIT", value: process.env.REAL_SEND_DAILY_LIMIT || "20" },
+                  { label: "REAL_SEND_DAILY_LIMIT", value: String(dailyLimit) },
                   { label: "REAL_SEND_BATCH_LIMIT", value: process.env.REAL_SEND_BATCH_LIMIT || "10" },
                   { label: "REAL_SEND_DELAY_MS", value: process.env.REAL_SEND_DELAY_MS || "5000" },
                   { label: "APP_URL", value: process.env.APP_URL || "http://localhost:3000" },

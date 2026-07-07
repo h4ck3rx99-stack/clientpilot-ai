@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-type CampaignFormData = {
+export type CampaignFormData = {
   name: string;
   serviceToPitch: string;
   targetNiche: string;
@@ -29,6 +29,17 @@ export default function CampaignForm({
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (!initial || !formRef.current) return;
+    const form = formRef.current;
+    const fields = ["name", "serviceToPitch", "targetNiche", "targetLocation", "offer", "cta", "dailySendLimit", "minimumFitScore"] as const;
+    for (const field of fields) {
+      const el = form.elements.namedItem(field) as HTMLInputElement | HTMLTextAreaElement | null;
+      if (el) el.value = String(initial[field]);
+    }
+  }, [initial]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -93,7 +104,7 @@ export default function CampaignForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
       {errors.length > 0 && (
         <div className="rounded-lg border border-red-800 bg-red-950/50 p-4">
           {errors.map((err, i) => (

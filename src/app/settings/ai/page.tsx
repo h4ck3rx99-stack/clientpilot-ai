@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { getProviderStatuses } from "@/lib/ai";
+import { getSession } from "@/lib/auth/session";
+import SetupStatusCard from "@/components/setup-status-card";
 
 export default async function AISettingsPage() {
+  const session = await getSession();
   const statuses = getProviderStatuses();
 
   const settings = [
@@ -18,29 +21,48 @@ export default async function AISettingsPage() {
         <div className="mx-auto max-w-3xl px-4 py-4 flex items-center justify-between">
           <nav className="flex items-center gap-6 text-sm">
             <Link href="/" className="flex items-center gap-2">
-              <div className="size-6 rounded bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white">
-                CP
-              </div>
+              <div className="size-6 rounded bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white">CP</div>
               <span className="font-semibold">ClientPilot AI</span>
             </Link>
-            <Link href="/dashboard" className="text-zinc-400 hover:text-white transition-colors">
-              Dashboard
-            </Link>
-            <Link href="/profile" className="text-zinc-400 hover:text-white transition-colors">
-              Profile
-            </Link>
-            <Link href="/campaigns" className="text-zinc-400 hover:text-white transition-colors">
-              Campaigns
-            </Link>
-            <Link href="/settings/ai" className="text-white font-medium">
-              AI Settings
-            </Link>
+            <Link href="/dashboard" className="text-zinc-400 hover:text-white transition-colors">Dashboard</Link>
+            <Link href="/onboarding" className="text-zinc-400 hover:text-white transition-colors">Onboarding</Link>
+            <Link href="/profile" className="text-zinc-400 hover:text-white transition-colors">Profile</Link>
+            <Link href="/campaigns" className="text-zinc-400 hover:text-white transition-colors">Campaigns</Link>
+            <Link href="/settings/ai" className="text-white font-medium">AI Settings</Link>
+            <Link href="/settings/email" className="text-zinc-400 hover:text-white transition-colors">Email Settings</Link>
           </nav>
         </div>
       </header>
 
       <main className="flex-1 px-6 py-8 max-w-3xl mx-auto w-full">
         <h1 className="text-2xl font-bold mb-6">AI Settings</h1>
+
+        {session && (
+          <div className="mb-8">
+            <SetupStatusCard userId={session.userId} />
+          </div>
+        )}
+
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-white mb-3">Recommended Zero-Budget Setup</h2>
+          <div className="rounded-xl border border-indigo-800/30 bg-indigo-950/10 p-5 space-y-2">
+            {[
+              { label: "Provider", value: "Groq (free tier)" },
+              { label: "Model", value: "llama-3.1-8b-instant" },
+              { label: "Bulk mode", value: "combined (analyze + draft in one call)" },
+              { label: "Max bulk leads per run", value: "25" },
+              { label: "Delay between requests", value: "2500ms" },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">{item.label}</span>
+                <span className="text-zinc-200 font-mono">{item.value}</span>
+              </div>
+            ))}
+            <p className="text-xs text-indigo-400 pt-2 border-t border-indigo-800/30 mt-2">
+              Set GROQ_API_KEY in your .env file. No credit card required.
+            </p>
+          </div>
+        </section>
 
         <section className="mb-8">
           <h2 className="text-sm font-semibold text-white mb-3">Provider Status</h2>

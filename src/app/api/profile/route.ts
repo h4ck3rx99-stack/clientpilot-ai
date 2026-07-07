@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { getProfile, upsertProfile } from "@/lib/profile";
+import { getSession } from "@/lib/auth/session";
 
 export async function GET() {
   try {
-    const profile = await getProfile();
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const profile = await getProfile(session.userId);
     return NextResponse.json(profile);
   } catch {
     return NextResponse.json(
@@ -15,6 +18,8 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const body = await request.json();
     const {
       businessName,
@@ -39,7 +44,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ errors }, { status: 400 });
     }
 
-    const profile = await upsertProfile({
+    const profile = await upsertProfile(session.userId, {
       businessName: businessName.trim(),
       senderName: senderName.trim(),
       senderEmail: senderEmail.trim(),

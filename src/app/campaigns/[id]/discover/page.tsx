@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getCampaignById } from "@/lib/campaigns";
 import { generateSearchQueriesForCampaign } from "@/lib/lead-discovery";
+import { getSession } from "@/lib/auth/session";
 import DiscoverClient from "./discover-client";
 import SearchQueryList from "./search-queries";
 
@@ -10,8 +11,10 @@ export default async function DiscoverPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const session = await getSession();
+  if (!session) redirect("/login");
   const { id } = await params;
-  const campaign = await getCampaignById(id);
+  const campaign = await getCampaignById(session.userId, id);
   if (!campaign) notFound();
 
   const queries = generateSearchQueriesForCampaign(campaign);

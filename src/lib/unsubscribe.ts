@@ -3,6 +3,7 @@ import { prisma } from "./prisma";
 import { createLeadActivity } from "./lead-activity";
 
 export async function getOrCreateUnsubscribeToken(
+  userId: string,
   email: string,
   campaignId?: string,
   leadId?: string
@@ -14,7 +15,7 @@ export async function getOrCreateUnsubscribeToken(
 
   const token = crypto.randomBytes(32).toString("hex");
   await prisma.unsubscribeToken.create({
-    data: { email, token, campaignId, leadId },
+    data: { userId, email, token, campaignId, leadId },
   });
   return token;
 }
@@ -24,7 +25,7 @@ export function buildUnsubscribeUrl(token: string): string {
   return `${appUrl}/unsubscribe/${token}`;
 }
 
-export async function unsubscribeByToken(token: string): Promise<{ success: boolean; message: string }> {
+export async function unsubscribeByToken(userId: string, token: string): Promise<{ success: boolean; message: string }> {
   const record = await prisma.unsubscribeToken.findUnique({
     where: { token },
   });
@@ -38,6 +39,7 @@ export async function unsubscribeByToken(token: string): Promise<{ success: bool
   if (!existing) {
     await prisma.unsubscribe.create({
       data: {
+        userId,
         email: record.email,
         reason: "Unsubscribed via link",
       },
@@ -53,7 +55,7 @@ export async function unsubscribeByToken(token: string): Promise<{ success: bool
       data: { status: "UNSUBSCRIBED" },
     });
     try {
-      await createLeadActivity({
+      await createLeadActivity(userId, {
         leadId: lead.id,
         campaignId: lead.campaignId,
         type: "UNSUBSCRIBED",

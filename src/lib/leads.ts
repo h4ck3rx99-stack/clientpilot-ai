@@ -25,20 +25,21 @@ export type CsvRow = {
   industry?: string;
 };
 
-export async function getLeadsByCampaignId(campaignId: string) {
+export async function getLeadsByCampaignId(userId: string, campaignId: string) {
   return prisma.lead.findMany({
-    where: { campaignId },
+    where: { campaignId, userId },
     orderBy: { createdAt: "desc" },
   });
 }
 
-export async function getLeadById(id: string) {
-  return prisma.lead.findUnique({ where: { id } });
+export async function getLeadById(userId: string, id: string) {
+  return prisma.lead.findFirst({ where: { id, userId } });
 }
 
-export async function createLead(campaignId: string, data: LeadInput) {
+export async function createLead(userId: string, campaignId: string, data: LeadInput) {
   return prisma.lead.create({
     data: {
+      userId,
       campaignId,
       companyName: data.companyName,
       website: data.website ?? null,
@@ -80,16 +81,17 @@ export async function updateLead(id: string, data: LeadInput) {
   });
 }
 
-export async function getLeadCountForCampaign(campaignId: string) {
-  return prisma.lead.count({ where: { campaignId } });
+export async function getLeadCountForCampaign(userId: string, campaignId: string) {
+  return prisma.lead.count({ where: { campaignId, userId } });
 }
 
 export async function getRecentLeadsForCampaign(
+  userId: string,
   campaignId: string,
   limit = 5
 ) {
   return prisma.lead.findMany({
-    where: { campaignId },
+    where: { campaignId, userId },
     orderBy: { createdAt: "desc" },
     take: limit,
   });

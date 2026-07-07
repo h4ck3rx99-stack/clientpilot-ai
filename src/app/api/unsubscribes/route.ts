@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { unsubscribeByToken } from "@/lib/unsubscribe";
+import { getSession } from "@/lib/auth/session";
 
 export async function POST(request: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await request.json();
 
   if (body.token) {
-    const result = await unsubscribeByToken(body.token);
+    const result = await unsubscribeByToken(session.userId, body.token);
     if (result.success) {
       return NextResponse.json({ message: result.message }, { status: 200 });
     }

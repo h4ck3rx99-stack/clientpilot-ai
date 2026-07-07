@@ -1,6 +1,7 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getCampaignById } from "@/lib/campaigns";
+import { getSession } from "@/lib/auth/session";
 import CsvImportForm from "./csv-import-form";
 
 export default async function ImportLeadsPage({
@@ -8,8 +9,10 @@ export default async function ImportLeadsPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const session = await getSession();
+  if (!session) redirect("/login");
   const { id } = await params;
-  const campaign = await getCampaignById(id);
+  const campaign = await getCampaignById(session.userId, id);
   if (!campaign) notFound();
 
   return (

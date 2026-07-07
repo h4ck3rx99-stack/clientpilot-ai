@@ -1,8 +1,9 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCampaignById } from "@/lib/campaigns";
 import { getLeadsByCampaignId, getLeadCountForCampaign } from "@/lib/leads";
+import { getSession } from "@/lib/auth/session";
 import LeadTable from "@/components/lead-table";
 import EmptyState from "@/components/empty-state";
 import { AnalyzeAllButton } from "@/components/analyze-buttons";
@@ -14,13 +15,15 @@ export default async function CampaignLeadsPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const session = await getSession();
+  if (!session) redirect("/login");
   const { id } = await params;
-  const campaign = await getCampaignById(id);
+  const campaign = await getCampaignById(session.userId, id);
   if (!campaign) notFound();
 
   const [leads, count, unsubscribed] = await Promise.all([
-    getLeadsByCampaignId(id),
-    getLeadCountForCampaign(id),
+    getLeadsByCampaignId(session.userId, id),
+    getLeadCountForCampaign(session.userId, id),
     prisma.unsubscribe.findMany({ select: { email: true } }),
   ]);
   const unsubscribedEmails = unsubscribed.map((u) => u.email);

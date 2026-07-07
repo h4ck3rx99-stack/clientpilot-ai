@@ -3,9 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { generateLeadIntelligence, logAIUsage } from "@/lib/ai/lead-intelligence";
 import { calculateLeadFitScore } from "@/lib/scoring";
 import { hasActiveDraftForLead } from "@/lib/email-drafts";
+import { getSession } from "@/lib/auth/session";
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const body = await request.json();
     const { leadId } = body;
 
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest) {
     const intelligence = await generateLeadIntelligence(lead.id);
 
     if (!intelligence.data) {
-      await logAIUsage({
+      await logAIUsage(session.userId, {
         provider: "local-rules",
         model: "deterministic-rules",
         taskType: "LEAD_INTELLIGENCE",
@@ -103,7 +106,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    await logAIUsage({
+    await logAIUsage(session.userId, {
       provider,
       model,
       taskType: "LEAD_INTELLIGENCE",

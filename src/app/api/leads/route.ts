@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLeadsByCampaignId, createLead } from "@/lib/leads";
+import { getSession } from "@/lib/auth/session";
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const campaignId = request.nextUrl.searchParams.get("campaignId");
     if (!campaignId) {
       return NextResponse.json(
@@ -10,7 +13,7 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
-    const leads = await getLeadsByCampaignId(campaignId);
+    const leads = await getLeadsByCampaignId(session.userId, campaignId);
     return NextResponse.json(leads);
   } catch {
     return NextResponse.json(
@@ -22,6 +25,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const body = await request.json();
     const {
       campaignId,
@@ -52,7 +57,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ errors }, { status: 400 });
     }
 
-    const lead = await createLead(campaignId, {
+    const lead = await createLead(session.userId, campaignId, {
       companyName: companyName.trim(),
       website: website.trim(),
       email: email.trim(),

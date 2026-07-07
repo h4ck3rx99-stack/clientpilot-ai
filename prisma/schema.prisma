@@ -7,104 +7,133 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                String             @id @default(cuid())
+  name              String?
+  email             String             @unique
+  passwordHash      String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  profiles          UserProfile[]
+  campaigns         Campaign[]
+  leads             Lead[]
+  emailDrafts       EmailDraft[]
+  emailSendLogs     EmailSendLog[]
+  activities        LeadActivity[]
+  aiUsageLogs       AIUsageLog[]
+  unsubscribes      Unsubscribe[]
+  unsubscribeTokens UnsubscribeToken[]
+  onboardingState   OnboardingState?
+}
+
 model UserProfile {
-  id          String   @id @default(cuid())
+  id           String   @id @default(cuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
   businessName String?
-  senderName  String?
-  senderEmail String?
-  services    String?
-  proof       String?
-  tone        String?
-  defaultCTA  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  senderName   String?
+  senderEmail  String?
+  services     String?
+  proof        String?
+  tone         String?
+  defaultCTA   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Campaign {
-  id               String         @id @default(cuid())
-  name             String
-  serviceToPitch   String
-  targetNiche      String
-  targetLocation   String
-  offer            String
-  cta              String
-  dailySendLimit   Int            @default(20)
-  minimumFitScore  Int            @default(60)
-  status           String         @default("DRAFT")
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  leads            Lead[]
-  emailSendLogs    EmailSendLog[]
-  leadActivities   LeadActivity[]
+  id              String         @id @default(cuid())
+  userId          String?
+  user            User?          @relation(fields: [userId], references: [id])
+  name            String
+  serviceToPitch  String
+  targetNiche     String
+  targetLocation  String
+  offer           String
+  cta             String
+  dailySendLimit  Int            @default(20)
+  minimumFitScore Int            @default(60)
+  status          String         @default("DRAFT")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  leads           Lead[]
+  emailSendLogs   EmailSendLog[]
+  leadActivities  LeadActivity[]
 }
 
 model Lead {
-  id                  String          @id @default(cuid())
-  campaignId          String
-  campaign            Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  companyName         String
-  website             String?
-  email               String?
-  sourceUrl           String?
-  industry            String?
-  painPoint           String?
-  offerAngle          String?
-  personalizationLine String?
-  fitScore            Int             @default(0)
-  scoreBreakdown      String?
-  status              String          @default("NEW")
-  pipelineStatus      String          @default("NOT_CONTACTED")
-  lastContactedAt     DateTime?
-  repliedAt           DateTime?
-  nextFollowUpAt      DateTime?
-  notes               String?
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
-  aiProviderUsed      String?
-  aiModelUsed         String?
-  discoverySource     String?
+  id                   String         @id @default(cuid())
+  campaignId           String
+  campaign             Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId               String?
+  user                 User?          @relation(fields: [userId], references: [id])
+  companyName          String
+  website              String?
+  email                String?
+  sourceUrl            String?
+  industry             String?
+  painPoint            String?
+  offerAngle           String?
+  personalizationLine  String?
+  fitScore             Int            @default(0)
+  scoreBreakdown       String?
+  status               String         @default("NEW")
+  pipelineStatus       String         @default("NOT_CONTACTED")
+  lastContactedAt      DateTime?
+  repliedAt            DateTime?
+  nextFollowUpAt       DateTime?
+  notes                String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  aiProviderUsed       String?
+  aiModelUsed          String?
+  discoverySource      String?
   extractionConfidence Int?
-  extractionNotes     String?
-  emailDrafts         EmailDraft[]
-  emailSendLogs       EmailSendLog[]
-  activities          LeadActivity[]
+  extractionNotes      String?
+  emailDrafts          EmailDraft[]
+  emailSendLogs        EmailSendLog[]
+  activities           LeadActivity[]
 }
 
 model EmailDraft {
-  id              String         @id @default(cuid())
-  leadId          String
-  lead            Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  subject         String
-  body            String
-  status          String         @default("DRAFT")
-  type            String         @default("INITIAL")
-  followUpNumber  Int            @default(0)
-  sentAt          DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  aiProviderUsed  String?
-  aiModelUsed     String?
-  sendLogs        EmailSendLog[]
+  id             String         @id @default(cuid())
+  leadId         String
+  lead           Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?          @relation(fields: [userId], references: [id])
+  subject        String
+  body           String
+  status         String         @default("DRAFT")
+  type           String         @default("INITIAL")
+  followUpNumber Int            @default(0)
+  sentAt         DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  aiProviderUsed String?
+  aiModelUsed    String?
+  sendLogs       EmailSendLog[]
 }
 
 model EmailSendLog {
-  id             String    @id @default(cuid())
+  id             String     @id @default(cuid())
   emailDraftId   String
   emailDraft     EmailDraft @relation(fields: [emailDraftId], references: [id], onDelete: Cascade)
   campaignId     String
-  campaign       Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign       Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   leadId         String
-  lead           Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  lead           Lead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?      @relation(fields: [userId], references: [id])
   recipientEmail String
   subject        String
-  status         String    @default("SENT")
+  status         String     @default("SENT")
   reason         String?
-  simulated      Boolean   @default(true)
-  realSend       Boolean   @default(false)
+  simulated      Boolean    @default(true)
+  realSend       Boolean    @default(false)
   provider       String?
   messageId      String?
   sentAt         DateTime?
-  createdAt      DateTime  @default(now())
+  createdAt      DateTime   @default(now())
 }
 
 model LeadActivity {
@@ -113,6 +142,8 @@ model LeadActivity {
   lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
   campaignId String
   campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
   type       String
   message    String
   createdAt  DateTime @default(now())
@@ -122,6 +153,8 @@ model Unsubscribe {
   id        String   @id @default(cuid())
   email     String   @unique
   reason    String?
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
 }
 
@@ -131,7 +164,25 @@ model UnsubscribeToken {
   token      String   @unique
   campaignId String?
   leadId     String?
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
   createdAt  DateTime @default(now())
+}
+
+model OnboardingState {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileCompleted     Boolean  @default(false)
+  firstCampaignCreated Boolean  @default(false)
+  firstLeadsAdded      Boolean  @default(false)
+  firstLeadsAnalyzed   Boolean  @default(false)
+  firstDraftGenerated  Boolean  @default(false)
+  firstDraftQueued     Boolean  @default(false)
+  firstSendCompleted   Boolean  @default(false)
+  dismissed            Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }
 
 model AIUsageLog {
@@ -141,5 +192,7 @@ model AIUsageLog {
   taskType     String
   success      Boolean
   errorMessage String?
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
   createdAt    DateTime @default(now())
 }

@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLeadById, updateLead } from "@/lib/leads";
+import { getSession } from "@/lib/auth/session";
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { id } = await params;
-    const lead = await getLeadById(id);
+    const lead = await getLeadById(session.userId, id);
     if (!lead) {
       return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     }

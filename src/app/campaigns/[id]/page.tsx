@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCampaignById } from "@/lib/campaigns";
@@ -6,6 +6,7 @@ import { getLeadCountForCampaign, getRecentLeadsForCampaign } from "@/lib/leads"
 import { getEmailDraftStatsForCampaign } from "@/lib/email-drafts";
 import { getTodaySendCountForCampaign } from "@/lib/sending";
 import { getFollowUpStatsForCampaign } from "@/lib/follow-ups";
+import { getSession } from "@/lib/auth/session";
 import StatusBadge from "@/components/status-badge";
 import FitScoreBadge from "@/components/fit-score-badge";
 import CampaignControls from "./campaign-controls";
@@ -15,6 +16,8 @@ export default async function CampaignDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const session = await getSession();
+  if (!session) redirect("/login");
   const { id } = await params;
   const [
     campaign,
@@ -25,15 +28,15 @@ export default async function CampaignDetailPage({
     sentToday,
     followUpStats,
   ] = await Promise.all([
-    getCampaignById(id),
-    getLeadCountForCampaign(id),
-    getRecentLeadsForCampaign(id, 5),
+    getCampaignById(session.userId, id),
+    getLeadCountForCampaign(session.userId, id),
+    getRecentLeadsForCampaign(session.userId, id, 5),
     prisma.lead.aggregate({
       where: { campaignId: id },
       _avg: { fitScore: true },
     }),
     getEmailDraftStatsForCampaign(id),
-    getTodaySendCountForCampaign(id),
+    getTodaySendCountForCampaign(session.userId, id),
     getFollowUpStatsForCampaign(id),
   ]);
 

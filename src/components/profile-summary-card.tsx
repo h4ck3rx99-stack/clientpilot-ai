@@ -1,8 +1,12 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/profile";
+import { getSession } from "@/lib/auth/session";
 
 export default async function ProfileSummaryCard() {
-  const profile = await getProfile();
+  const session = await getSession();
+  if (!session) redirect("/login");
+  const profile = await getProfile(session.userId);
 
   if (!profile) {
     return (

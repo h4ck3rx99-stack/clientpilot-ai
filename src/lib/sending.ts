@@ -13,11 +13,13 @@ function getLocalDateBoundaries(): { start: Date; end: Date } {
 }
 
 export async function getTodaySendCountForCampaign(
+  userId: string,
   campaignId: string
 ): Promise<number> {
   const { start, end } = getLocalDateBoundaries();
   return prisma.emailSendLog.count({
     where: {
+      campaign: { userId },
       campaignId,
       status: "SENT",
       simulated: true,
@@ -56,11 +58,11 @@ export type CanSendResult = {
   reasons: string[];
 };
 
-export async function canSendDraft(draftId: string): Promise<CanSendResult> {
+export async function canSendDraft(userId: string, draftId: string): Promise<CanSendResult> {
   const reasons: string[] = [];
 
-  const draft = await prisma.emailDraft.findUnique({
-    where: { id: draftId },
+  const draft = await prisma.emailDraft.findFirst({
+    where: { id: draftId, userId },
     include: { lead: true },
   });
 
@@ -106,7 +108,7 @@ export async function canSendDraft(draftId: string): Promise<CanSendResult> {
       reasons.push(`Lead fit score (${lead.fitScore}) is below campaign threshold (${campaign.minimumFitScore}).`);
     }
 
-    const todayCount = await getTodaySendCountForCampaign(campaign.id);
+    const todayCount = await getTodaySendCountForCampaign(userId, campaign.id);
     if (todayCount >= campaign.dailySendLimit) {
       reasons.push(`Daily send limit reached (${todayCount}/${campaign.dailySendLimit}).`);
     }
@@ -134,10 +136,11 @@ export type SendResult = {
 };
 
 export async function simulateSendDraft(
+  userId: string,
   draftId: string
 ): Promise<SendResult> {
-  const draft = await prisma.emailDraft.findUnique({
-    where: { id: draftId },
+  const draft = await prisma.emailDraft.findFirst({
+    where: { id: draftId, userId },
     include: { lead: { include: { campaign: true } } },
   });
 
@@ -145,11 +148,12 @@ export async function simulateSendDraft(
     return { status: "failed", companyName: "Unknown", email: "Unknown", reason: "Draft or lead not found." };
   }
 
-  const { allowed, reasons } = await canSendDraft(draftId);
+  const { allowed, reasons } = await canSendDraft(userId, draftId);
 
   if (!allowed) {
     await prisma.emailSendLog.create({
       data: {
+        userId,
         emailDraftId: draft.id,
         campaignId: draft.lead.campaignId,
         leadId: draft.lead.id,
@@ -161,7 +165,7 @@ export async function simulateSendDraft(
       },
     });
 
-    await createLeadActivity({
+    await createLeadActivity(userId, {
       leadId: draft.lead.id,
       campaignId: draft.lead.campaignId,
       type: "SEND_SKIPPED",
@@ -176,6 +180,7 @@ export async function simulateSendDraft(
 
     await prisma.emailSendLog.create({
       data: {
+        userId,
         emailDraftId: draft.id,
         campaignId: draft.lead.campaignId,
         leadId: draft.lead.id,
@@ -207,14 +212,14 @@ export async function simulateSendDraft(
     await prisma.lead.update({ where: { id: draft.lead.id }, data: leadUpdateData });
 
     if (isFollowUp) {
-      await createLeadActivity({
+      await createLeadActivity(userId, {
         leadId: draft.lead.id,
         campaignId: draft.lead.campaignId,
         type: "FOLLOW_UP_SENT_SIMULATED",
         message: `Simulated follow-up #${draft.followUpNumber} sent to ${draft.lead.email}.`,
       });
     } else {
-      await createLeadActivity({
+      await createLeadActivity(userId, {
         leadId: draft.lead.id,
         campaignId: draft.lead.campaignId,
         type: "EMAIL_SENT_SIMULATED",
@@ -228,6 +233,7 @@ export async function simulateSendDraft(
 
     await prisma.emailSendLog.create({
       data: {
+        userId,
         emailDraftId: draft.id,
         campaignId: draft.lead.campaignId,
         leadId: draft.lead.id,
@@ -243,9 +249,9 @@ export async function simulateSendDraft(
   }
 }
 
-export async function sendDraft(draftId: string): Promise<SendResult> {
-  const draft = await prisma.emailDraft.findUnique({
-    where: { id: draftId },
+export async function sendDraft(userId: string, draftId: string): Promise<SendResult> {
+  const draft = await prisma.emailDraft.findFirst({
+    where: { id: draftId, userId },
     include: { lead: { include: { campaign: true } } },
   });
 
@@ -253,10 +259,11 @@ export async function sendDraft(draftId: string): Promise<SendResult> {
     return { status: "failed", companyName: "Unknown", email: "Unknown", reason: "Draft or lead not found." };
   }
 
-  const { allowed, reasons } = await canSendDraft(draftId);
+  const { allowed, reasons } = await canSendDraft(userId, draftId);
   if (!allowed) {
     await prisma.emailSendLog.create({
       data: {
+        userId,
         emailDraftId: draft.id,
         campaignId: draft.lead.campaignId,
         leadId: draft.lead.id,
@@ -270,7 +277,7 @@ export async function sendDraft(draftId: string): Promise<SendResult> {
       },
     });
 
-    await createLeadActivity({
+    await createLeadActivity(userId, {
       leadId: draft.lead.id,
       campaignId: draft.lead.campaignId,
       type: "SEND_SKIPPED",
@@ -283,7 +290,7 @@ export async function sendDraft(draftId: string): Promise<SendResult> {
   const provider = getEmailProvider();
 
   if (provider.name === "simulation") {
-    return simulateSendDraft(draftId);
+    return simulateSendDraft(userId, draftId);
   }
 
   // Real SMTP sending
@@ -291,17 +298,17 @@ export async function sendDraft(draftId: string): Promise<SendResult> {
     const realDailyLimit = parseInt(process.env.REAL_SEND_DAILY_LIMIT || "20", 10);
     const todayRealCount = await getTodayRealSendCount();
     if (todayRealCount >= realDailyLimit) {
-      await createSkipLog(draft, `Real send daily limit reached (${todayRealCount}/${realDailyLimit})`);
+      await createSkipLog(userId, draft, `Real send daily limit reached (${todayRealCount}/${realDailyLimit})`);
       return { status: "skipped", companyName: draft.lead.companyName, email: draft.lead.email || "", reason: "Real send daily limit reached." };
     }
 
     const campaignRealCount = await getTodayRealSendCountForCampaign(draft.lead.campaignId);
     if (campaignRealCount >= draft.lead.campaign.dailySendLimit) {
-      await createSkipLog(draft, `Campaign daily send limit reached (${campaignRealCount}/${draft.lead.campaign.dailySendLimit})`);
+      await createSkipLog(userId, draft, `Campaign daily send limit reached (${campaignRealCount}/${draft.lead.campaign.dailySendLimit})`);
       return { status: "skipped", companyName: draft.lead.companyName, email: draft.lead.email || "", reason: "Campaign daily send limit reached." };
     }
 
-    const token = await getOrCreateUnsubscribeToken(draft.lead.email!, draft.lead.campaignId, draft.lead.id);
+    const token = await getOrCreateUnsubscribeToken(userId, draft.lead.email!, draft.lead.campaignId, draft.lead.id);
     const unsubscribeUrl = buildUnsubscribeUrl(token);
 
     const fromName = process.env.SMTP_FROM_NAME || "";
@@ -321,6 +328,7 @@ export async function sendDraft(draftId: string): Promise<SendResult> {
 
       await prisma.emailSendLog.create({
         data: {
+          userId,
           emailDraftId: draft.id,
           campaignId: draft.lead.campaignId,
           leadId: draft.lead.id,
@@ -354,7 +362,7 @@ export async function sendDraft(draftId: string): Promise<SendResult> {
 
       await prisma.lead.update({ where: { id: draft.lead.id }, data: leadUpdateData });
 
-      await createLeadActivity({
+      await createLeadActivity(userId, {
         leadId: draft.lead.id,
         campaignId: draft.lead.campaignId,
         type: "EMAIL_SENT_REAL",
@@ -366,6 +374,7 @@ export async function sendDraft(draftId: string): Promise<SendResult> {
 
     await prisma.emailSendLog.create({
       data: {
+        userId,
         emailDraftId: draft.id,
         campaignId: draft.lead.campaignId,
         leadId: draft.lead.id,
@@ -379,7 +388,7 @@ export async function sendDraft(draftId: string): Promise<SendResult> {
       },
     });
 
-    await createLeadActivity({
+    await createLeadActivity(userId, {
       leadId: draft.lead.id,
       campaignId: draft.lead.campaignId,
       type: "EMAIL_SEND_FAILED",
@@ -392,6 +401,7 @@ export async function sendDraft(draftId: string): Promise<SendResult> {
 
     await prisma.emailSendLog.create({
       data: {
+        userId,
         emailDraftId: draft.id,
         campaignId: draft.lead.campaignId,
         leadId: draft.lead.id,
@@ -410,11 +420,13 @@ export async function sendDraft(draftId: string): Promise<SendResult> {
 }
 
 async function createSkipLog(
+  userId: string,
   draft: { id: string; subject: string; lead: { campaignId: string; id: string; companyName: string; email: string | null } },
   reason: string
 ) {
   await prisma.emailSendLog.create({
     data: {
+      userId,
       emailDraftId: draft.id,
       campaignId: draft.lead.campaignId,
       leadId: draft.lead.id,
@@ -439,14 +451,15 @@ export type BatchSendSummary = {
 };
 
 export async function simulateSendQueuedEmailsForCampaign(
+  userId: string,
   campaignId: string
 ): Promise<BatchSendSummary> {
-  const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
+  const campaign = await prisma.campaign.findUnique({ where: { id: campaignId, userId } });
   if (!campaign) {
     return { sent: 0, skipped: 0, failed: 0, remainingCapacity: 0, provider: "simulation", results: [] };
   }
 
-  const todayCount = await getTodaySendCountForCampaign(campaignId);
+  const todayCount = await getTodaySendCountForCampaign(userId, campaignId);
   const remaining = Math.max(0, campaign.dailySendLimit - todayCount);
 
   const queuedDrafts = await prisma.emailDraft.findMany({
@@ -481,7 +494,7 @@ export async function simulateSendQueuedEmailsForCampaign(
       continue;
     }
 
-    const result = await simulateSendDraft(draft.id);
+    const result = await simulateSendDraft(userId, draft.id);
     results.push(result);
     if (result.status === "sent") sentCount++;
     else if (result.status === "skipped") skippedCount++;
@@ -499,9 +512,10 @@ export async function simulateSendQueuedEmailsForCampaign(
 }
 
 export async function sendQueuedEmailsForCampaign(
+  userId: string,
   campaignId: string
 ): Promise<BatchSendSummary> {
-  const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
+  const campaign = await prisma.campaign.findUnique({ where: { id: campaignId, userId } });
   if (!campaign) {
     return { sent: 0, skipped: 0, failed: 0, remainingCapacity: 0, provider: "unknown", results: [] };
   }
@@ -510,7 +524,7 @@ export async function sendQueuedEmailsForCampaign(
   const mode = provider.name;
 
   if (mode === "simulation") {
-    return simulateSendQueuedEmailsForCampaign(campaignId);
+    return simulateSendQueuedEmailsForCampaign(userId, campaignId);
   }
 
   const realDailyLimit = parseInt(process.env.REAL_SEND_DAILY_LIMIT || "20", 10);
@@ -556,7 +570,7 @@ export async function sendQueuedEmailsForCampaign(
       continue;
     }
 
-    const result = await sendDraft(draft.id);
+    const result = await sendDraft(userId, draft.id);
     results.push(result);
     if (result.status === "sent") sentCount++;
     else if (result.status === "skipped") skippedCount++;

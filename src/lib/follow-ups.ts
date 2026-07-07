@@ -47,6 +47,7 @@ export type GenerateFollowUpResult = {
 };
 
 export async function generateFollowUpDraftForLead(
+  userId: string,
   leadId: string
 ): Promise<GenerateFollowUpResult> {
   const lead = await prisma.lead.findUnique({
@@ -120,6 +121,7 @@ export async function generateFollowUpDraftForLead(
 
     await prisma.emailDraft.create({
       data: {
+        userId,
         leadId: lead.id,
         subject,
         body,
@@ -129,7 +131,7 @@ export async function generateFollowUpDraftForLead(
       },
     });
 
-    await createLeadActivity({
+    await createLeadActivity(userId, {
       leadId: lead.id,
       campaignId: lead.campaignId,
       type: "FOLLOW_UP_DRAFT_GENERATED",
@@ -160,6 +162,7 @@ export type BatchFollowUpSummary = {
 };
 
 export async function generateFollowUpsForCampaign(
+  userId: string,
   campaignId: string
 ): Promise<BatchFollowUpSummary> {
   const candidates = await getFollowUpCandidatesForCampaign(campaignId);
@@ -169,7 +172,7 @@ export async function generateFollowUpsForCampaign(
   const results: GenerateFollowUpResult[] = [];
 
   for (const c of candidates) {
-    const result = await generateFollowUpDraftForLead(c.leadId);
+    const result = await generateFollowUpDraftForLead(userId, c.leadId);
     results.push(result);
     if (result.status === "generated") generated++;
     else if (result.status === "skipped") skipped++;

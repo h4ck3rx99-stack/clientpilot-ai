@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
   getEmailDraftsByCampaignId,
@@ -7,6 +7,7 @@ import {
 } from "@/lib/email-drafts";
 import { getTodaySendCountForCampaign } from "@/lib/sending";
 import { getEmailProviderStatus } from "@/lib/email";
+import { getSession } from "@/lib/auth/session";
 import EmailDraftCard from "@/components/email-draft-card";
 import { GenerateDraftsAllButton } from "@/components/generate-draft-buttons";
 import SimulatedSendCard from "@/components/simulated-send-card";
@@ -17,6 +18,8 @@ export default async function EmailQueuePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const session = await getSession();
+  if (!session) redirect("/login");
   const { id: campaignId } = await params;
 
   const campaign = await prisma.campaign.findUnique({
@@ -27,9 +30,9 @@ export default async function EmailQueuePage({
   const emailStatus = getEmailProviderStatus();
 
   const [drafts, stats, sentToday] = await Promise.all([
-    getEmailDraftsByCampaignId(campaignId),
+    getEmailDraftsByCampaignId(session.userId, campaignId),
     getEmailDraftStatsForCampaign(campaignId),
-    getTodaySendCountForCampaign(campaignId),
+    getTodaySendCountForCampaign(session.userId, campaignId),
   ]);
 
   return (

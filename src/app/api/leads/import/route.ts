@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createLead, parseCsvText, validateCsvHeaders, csvRowToInput } from "@/lib/leads";
+import { getSession } from "@/lib/auth/session";
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const body = await request.json();
     const { campaignId, csvText } = body;
 
@@ -42,7 +45,7 @@ export async function POST(request: NextRequest) {
         continue;
       }
       if (result.data) {
-        await createLead(campaignId, {
+        await createLead(session.userId, campaignId, {
           companyName: result.data.companyName,
           website: result.data.website,
           email: result.data.email,

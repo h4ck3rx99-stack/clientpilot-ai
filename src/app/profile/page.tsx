@@ -1,9 +1,13 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/profile";
+import { getSession } from "@/lib/auth/session";
 import ProfileForm from "@/components/profile-form";
 
 export default async function ProfilePage() {
-  const profile = await getProfile();
+  const session = await getSession();
+  if (!session) redirect("/login");
+  const profile = await getProfile(session.userId);
 
   return (
     <>

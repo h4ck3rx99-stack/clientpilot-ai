@@ -129,7 +129,7 @@ export async function generateLeadIntelligence(
   return { error: localResult.error || "Local rules also failed" };
 }
 
-export async function logAIUsage(input: {
+export async function logAIUsage(userId: string, input: {
   provider: AIProviderName;
   model: string;
   taskType: AILeadTaskType;
@@ -139,6 +139,7 @@ export async function logAIUsage(input: {
   try {
     await prisma.aIUsageLog.create({
       data: {
+        userId,
         provider: input.provider,
         model: input.model,
         taskType: input.taskType,

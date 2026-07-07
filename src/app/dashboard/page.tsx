@@ -1,11 +1,16 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getDashboardMetrics, getRecentCampaigns } from "@/lib/campaigns";
 import { getRecentActivities } from "@/lib/lead-activity";
 import { getEmailProviderStatus, getEmailProvider } from "@/lib/email";
+import { getSession } from "@/lib/auth/session";
 import ProfileSummaryCard from "@/components/profile-summary-card";
 import StatusBadge from "@/components/status-badge";
 import EmptyState from "@/components/empty-state";
+import SetupStatusCard from "@/components/setup-status-card";
+import { getOrCreateOnboardingState, getCompletedCount, isOnboardingComplete, getNextStep, ONBOARDING_STEP_LABELS } from "@/lib/onboarding";
+import OnboardingDismissButton from "@/components/onboarding-dismiss-button";
 
 function getLocalDateStart(): Date {
   const now = new Date();
@@ -13,7 +18,9 @@ function getLocalDateStart(): Date {
 }
 
 export default async function DashboardPage() {
-  const metrics = await getDashboardMetrics();
+  const session = await getSession();
+  if (!session) redirect("/login");
+  const metrics = await getDashboardMetrics(session.userId);
 
   const emailStatus = getEmailProviderStatus();
 
@@ -32,7 +39,7 @@ export default async function DashboardPage() {
     recentAiUsage,
     newLeadsWaiting,
   ] = await Promise.all([
-    getRecentCampaigns(),
+    getRecentCampaigns(session.userId),
     prisma.emailSendLog.count({
       where: {
         status: "SENT",
@@ -49,7 +56,7 @@ export default async function DashboardPage() {
         campaign: { select: { name: true, id: true } },
       },
     }),
-    getRecentActivities(5),
+    getRecentActivities(session.userId, 5),
     prisma.lead.count({
       where: { pipelineStatus: { not: "NOT_CONTACTED" } },
     }),
@@ -142,6 +149,11 @@ export default async function DashboardPage() {
     },
   ];
 
+  const onboardingState = await getOrCreateOnboardingState(session.userId);
+  const onboardingCompleted = isOnboardingComplete(onboardingState);
+  const onboardingCompletedCount = getCompletedCount(onboardingState);
+  const onboardingNextStep = getNextStep(onboardingState);
+
   return (
     <>
       <header className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
@@ -154,53 +166,52 @@ export default async function DashboardPage() {
           </Link>
         </div>
         <nav className="flex items-center gap-6 text-sm">
-          <Link
-            href="/dashboard"
-            className="text-white font-medium"
-          >
-            Dashboard
-          </Link>
-          <Link
-            href="/profile"
-            className="text-zinc-400 hover:text-white transition-colors"
-          >
-            Profile
-          </Link>
-          <Link
-            href="/campaigns"
-            className="text-zinc-400 hover:text-white transition-colors"
-          >
-            Campaigns
-          </Link>
-          <Link
-            href="/campaigns/new"
-            className="text-zinc-400 hover:text-white transition-colors"
-          >
-            New Campaign
-          </Link>
-          <Link
-            href="/unsubscribes"
-            className="text-zinc-400 hover:text-white transition-colors"
-          >
-            Unsubscribes
-          </Link>
-          <Link
-            href="/settings/ai"
-            className="text-zinc-400 hover:text-white transition-colors"
-          >
-            AI Settings
-          </Link>
-          <Link
-            href="/settings/email"
-            className="text-zinc-400 hover:text-white transition-colors"
-          >
-            Email Settings
-          </Link>
+          <Link href="/dashboard" className="text-white font-medium">Dashboard</Link>
+          <Link href="/onboarding" className="text-zinc-400 hover:text-white transition-colors">Onboarding</Link>
+          <Link href="/profile" className="text-zinc-400 hover:text-white transition-colors">Profile</Link>
+          <Link href="/campaigns" className="text-zinc-400 hover:text-white transition-colors">Campaigns</Link>
+          <Link href="/campaigns/new" className="text-zinc-400 hover:text-white transition-colors">New Campaign</Link>
+          <Link href="/unsubscribes" className="text-zinc-400 hover:text-white transition-colors">Unsubscribes</Link>
+          <Link href="/settings/ai" className="text-zinc-400 hover:text-white transition-colors">AI Settings</Link>
+          <Link href="/settings/email" className="text-zinc-400 hover:text-white transition-colors">Email Settings</Link>
+          {process.env.NODE_ENV !== "production" && (
+            <Link href="/settings/dev-tools" className="text-zinc-400 hover:text-white transition-colors">Dev Tools</Link>
+          )}
         </nav>
       </header>
 
       <main className="flex-1 px-6 py-8 max-w-5xl mx-auto w-full">
         <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+
+        {!onboardingState.dismissed && !onboardingCompleted && (
+          <div className="rounded-xl border border-indigo-800/30 bg-indigo-950/10 p-5 mb-6 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-indigo-300">Finish setup</p>
+              <p className="text-xs text-zinc-500 mt-1">
+                {onboardingCompletedCount} of 7 complete &middot; Next: {onboardingNextStep ? ONBOARDING_STEP_LABELS[onboardingNextStep] : "—"}
+              </p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <Link
+                href="/onboarding"
+                className="inline-flex h-9 items-center justify-center rounded-lg bg-indigo-500 px-4 text-xs font-medium text-white hover:bg-indigo-400 transition-colors"
+              >
+                Continue Setup
+              </Link>
+              <OnboardingDismissButton />
+            </div>
+          </div>
+        )}
+
+        {onboardingCompleted && !onboardingState.dismissed && (
+          <div className="rounded-xl border border-emerald-800/30 bg-emerald-950/10 p-5 mb-6 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-emerald-300">ClientPilot is ready.</p>
+              <p className="text-xs text-zinc-500 mt-1">All 7 onboarding steps are complete.</p>
+            </div>
+            <OnboardingDismissButton />
+          </div>
+        )}
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
           {cards.map((card) => (
@@ -225,6 +236,10 @@ export default async function DashboardPage() {
         <section className="mb-10">
           <h2 className="text-lg font-semibold mb-3">Profile</h2>
           <ProfileSummaryCard />
+        </section>
+
+        <section className="mb-10">
+          <SetupStatusCard userId={session.userId} />
         </section>
 
         <section className="mb-10">

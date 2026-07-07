@@ -3,9 +3,12 @@ import { getLeadById, updateLead } from "@/lib/leads";
 import { getCampaignById } from "@/lib/campaigns";
 import { getProfile } from "@/lib/profile";
 import { analyzeLead } from "@/lib/lead-analysis";
+import { getSession } from "@/lib/auth/session";
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const body = await request.json();
     const { leadId } = body;
 
@@ -13,12 +16,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "leadId is required" }, { status: 400 });
     }
 
-    const lead = await getLeadById(leadId);
+    const lead = await getLeadById(session.userId, leadId);
     if (!lead) {
       return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     }
 
-    const profile = await getProfile();
+    const profile = await getProfile(session.userId);
     if (!profile) {
       return NextResponse.json(
         { error: "Create your profile before analyzing leads." },
@@ -26,7 +29,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const campaign = await getCampaignById(lead.campaignId);
+    const campaign = await getCampaignById(session.userId, lead.campaignId);
     if (!campaign) {
       return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
     }

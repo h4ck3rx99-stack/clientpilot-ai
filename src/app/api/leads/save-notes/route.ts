@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createLeadActivity } from "@/lib/lead-activity";
+import { getSession } from "@/lib/auth/session";
 
 export async function PUT(request: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { leadId, notes, nextFollowUpAt, pipelineStatus } =
     await request.json();
 
@@ -43,7 +46,7 @@ export async function PUT(request: NextRequest) {
   });
 
   if (pipelineStatus !== undefined && pipelineStatus !== lead.pipelineStatus) {
-    await createLeadActivity({
+    await createLeadActivity(session.userId, {
       leadId: lead.id,
       campaignId: lead.campaignId,
       type: "STATUS_CHANGED",
@@ -52,7 +55,7 @@ export async function PUT(request: NextRequest) {
   }
 
   if (notes !== undefined && notes?.trim() !== (lead.notes || "")) {
-    await createLeadActivity({
+    await createLeadActivity(session.userId, {
       leadId: lead.id,
       campaignId: lead.campaignId,
       type: "NOTE_ADDED",
@@ -64,7 +67,7 @@ export async function PUT(request: NextRequest) {
     const oldDateStr = lead.nextFollowUpAt?.toISOString() || "";
     const newDateStr = new Date(nextFollowUpAt).toISOString();
     if (nextFollowUpAt && newDateStr !== oldDateStr) {
-      await createLeadActivity({
+      await createLeadActivity(session.userId, {
         leadId: lead.id,
         campaignId: lead.campaignId,
         type: "FOLLOW_UP_SET",

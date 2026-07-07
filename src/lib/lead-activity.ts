@@ -7,9 +7,10 @@ export type ActivityInput = {
   message: string;
 };
 
-export async function createLeadActivity(input: ActivityInput) {
+export async function createLeadActivity(userId: string, input: ActivityInput) {
   return prisma.leadActivity.create({
     data: {
+      userId,
       leadId: input.leadId,
       campaignId: input.campaignId,
       type: input.type,
@@ -39,8 +40,9 @@ export async function getRecentActivitiesForCampaign(
   });
 }
 
-export async function getRecentActivities(limit = 5) {
+export async function getRecentActivities(userId: string, limit = 5) {
   return prisma.leadActivity.findMany({
+    where: { userId },
     orderBy: { createdAt: "desc" },
     take: limit,
     include: {

@@ -3,12 +3,15 @@ import {
   generateFollowUpDraftForLead,
   generateFollowUpsForCampaign,
 } from "@/lib/follow-ups";
+import { getSession } from "@/lib/auth/session";
 
 export async function POST(request: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { campaignId, leadId } = await request.json();
 
   if (leadId) {
-    const result = await generateFollowUpDraftForLead(leadId);
+    const result = await generateFollowUpDraftForLead(session.userId, leadId);
     return NextResponse.json(result, { status: result.status === "failed" ? 500 : 200 });
   }
 
@@ -19,6 +22,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const result = await generateFollowUpsForCampaign(campaignId);
+  const result = await generateFollowUpsForCampaign(session.userId, campaignId);
   return NextResponse.json(result, { status: 200 });
 }
