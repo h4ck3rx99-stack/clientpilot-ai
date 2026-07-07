@@ -8,13 +8,17 @@ export default function EmailDraftForm({
   draftId,
   campaignId,
   initial,
+  emailMode = "simulation",
 }: {
   draftId: string;
   campaignId: string;
   initial: { subject: string; body: string; status: string };
+  emailMode?: string;
 }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
 
   async function handleSave(e: FormEvent<HTMLFormElement>) {
@@ -150,6 +154,33 @@ export default function EmailDraftForm({
           >
             Cancel Draft
           </button>
+        )}
+        {initial.status === "QUEUED" && (
+          <button
+            type="button"
+            disabled={sending}
+            onClick={async () => {
+              setSending(true);
+              setSendResult("");
+              const res = await fetch(`/api/email-drafts/${draftId}/send`, {
+                method: "POST",
+              });
+              const data = await res.json();
+              if (res.ok) {
+                setSendResult(data.status === "sent" ? "Sent successfully" : data.reason || "Done");
+                router.refresh();
+              } else {
+                setSendResult(data.reason || "Send failed");
+              }
+              setSending(false);
+            }}
+            className="inline-flex h-10 items-center justify-center rounded-lg bg-indigo-500 px-5 text-sm font-medium text-white hover:bg-indigo-400 disabled:opacity-50 transition-colors"
+          >
+            {sending ? "Sending..." : emailMode === "smtp" ? "Send This Draft" : "Simulate Send This Draft"}
+          </button>
+        )}
+        {sendResult && (
+          <span className="text-xs text-zinc-400">{sendResult}</span>
         )}
         <Link
           href={`/campaigns/${campaignId}/emails`}

@@ -100,6 +100,9 @@ model EmailSendLog {
   status         String    @default("SENT")
   reason         String?
   simulated      Boolean   @default(true)
+  realSend       Boolean   @default(false)
+  provider       String?
+  messageId      String?
   sentAt         DateTime?
   createdAt      DateTime  @default(now())
 }
@@ -120,6 +123,15 @@ model Unsubscribe {
   email     String   @unique
   reason    String?
   createdAt DateTime @default(now())
+}
+
+model UnsubscribeToken {
+  id         String   @id @default(cuid())
+  email      String
+  token      String   @unique
+  campaignId String?
+  leadId     String?
+  createdAt  DateTime @default(now())
 }
 
 model AIUsageLog {

@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { unsubscribeByToken } from "@/lib/unsubscribe";
 
 export async function POST(request: NextRequest) {
-  const { email, reason } = await request.json();
+  const body = await request.json();
+
+  if (body.token) {
+    const result = await unsubscribeByToken(body.token);
+    if (result.success) {
+      return NextResponse.json({ message: result.message }, { status: 200 });
+    }
+    return NextResponse.json({ error: result.message }, { status: 400 });
+  }
+
+  const { email, reason } = body;
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json(

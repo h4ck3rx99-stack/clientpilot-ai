@@ -54,6 +54,12 @@ export default async function CampaignsPage() {
             >
               AI Settings
             </Link>
+            <Link
+              href="/settings/email"
+              className="text-zinc-400 hover:text-white transition-colors"
+            >
+              Email Settings
+            </Link>
           </nav>
       </header>
 

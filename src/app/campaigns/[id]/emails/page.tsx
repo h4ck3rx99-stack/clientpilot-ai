@@ -6,6 +6,7 @@ import {
   getEmailDraftStatsForCampaign,
 } from "@/lib/email-drafts";
 import { getTodaySendCountForCampaign } from "@/lib/sending";
+import { getEmailProviderStatus } from "@/lib/email";
 import EmailDraftCard from "@/components/email-draft-card";
 import { GenerateDraftsAllButton } from "@/components/generate-draft-buttons";
 import SimulatedSendCard from "@/components/simulated-send-card";
@@ -22,6 +23,8 @@ export default async function EmailQueuePage({
     where: { id: campaignId },
   });
   if (!campaign) notFound();
+
+  const emailStatus = getEmailProviderStatus();
 
   const [drafts, stats, sentToday] = await Promise.all([
     getEmailDraftsByCampaignId(campaignId),
@@ -72,6 +75,8 @@ export default async function EmailQueuePage({
           dailySendLimit={campaign.dailySendLimit}
           sentToday={sentToday}
           queuedCount={stats.queued}
+          emailMode={emailStatus.mode}
+          smtpConfigured={emailStatus.smtpConfigured}
         />
 
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">

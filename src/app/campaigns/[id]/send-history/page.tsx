@@ -73,7 +73,7 @@ export default async function SendHistoryPage({
                     <th className="pb-3 pr-4 pt-3 font-medium">Subject</th>
                     <th className="pb-3 pr-4 pt-3 font-medium">Status</th>
                     <th className="pb-3 pr-4 pt-3 font-medium">Reason</th>
-                    <th className="pb-3 pr-3 pt-3 font-medium">Simulated</th>
+                    <th className="pb-3 pr-3 pt-3 font-medium">Mode</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -106,9 +106,18 @@ export default async function SendHistoryPage({
                         {log.reason || "—"}
                       </td>
                       <td className="py-3 pr-3">
-                        <span className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-800/50 px-2.5 py-0.5 text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
-                          Sim
-                        </span>
+                        {log.realSend ? (
+                          <span className="inline-flex items-center rounded-full border border-indigo-700/50 bg-indigo-950/30 px-2.5 py-0.5 text-[10px] font-medium text-indigo-400 uppercase tracking-wider">
+                            Real
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-800/50 px-2.5 py-0.5 text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
+                            Sim
+                          </span>
+                        )}
+                        {log.provider && (
+                          <span className="text-[9px] text-zinc-600 ml-1">{log.provider}</span>
+                        )}
                       </td>
                     </tr>
                   ))}

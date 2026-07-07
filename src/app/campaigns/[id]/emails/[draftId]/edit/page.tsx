@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEmailDraftById } from "@/lib/email-drafts";
+import { getEmailProviderStatus } from "@/lib/email";
 import EmailDraftForm from "@/components/email-draft-form";
 import StatusBadge from "@/components/status-badge";
 
@@ -13,6 +14,9 @@ export default async function EditDraftPage({
 
   const draft = await getEmailDraftById(draftId);
   if (!draft || draft.lead.campaignId !== campaignId) notFound();
+
+  const emailStatus = getEmailProviderStatus();
+  const emailMode = emailStatus.mode;
 
   const readOnly =
     draft.status === "SENT" || draft.status === "CANCELLED";
@@ -147,6 +151,7 @@ export default async function EditDraftPage({
               body: draft.body,
               status: draft.status,
             }}
+            emailMode={emailMode}
           />
         )}
       </main>

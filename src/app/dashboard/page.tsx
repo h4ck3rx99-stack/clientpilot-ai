@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getDashboardMetrics, getRecentCampaigns } from "@/lib/campaigns";
 import { getRecentActivities } from "@/lib/lead-activity";
+import { getEmailProviderStatus, getEmailProvider } from "@/lib/email";
 import ProfileSummaryCard from "@/components/profile-summary-card";
 import StatusBadge from "@/components/status-badge";
 import EmptyState from "@/components/empty-state";
@@ -13,6 +14,8 @@ function getLocalDateStart(): Date {
 
 export default async function DashboardPage() {
   const metrics = await getDashboardMetrics();
+
+  const emailStatus = getEmailProviderStatus();
 
   const [
     recentCampaigns,
@@ -79,6 +82,13 @@ export default async function DashboardPage() {
       where: { status: "NEW" },
     }),
   ]);
+
+  const realSentToday = await prisma.emailSendLog.count({
+    where: { realSend: true, status: "SENT", sentAt: { gte: getLocalDateStart() } },
+  });
+  const realFailedToday = await prisma.emailSendLog.count({
+    where: { realSend: true, status: "FAILED", sentAt: { gte: getLocalDateStart() } },
+  });
 
   const cards = [
     { label: "Total campaigns", value: metrics.totalCampaigns },
@@ -180,6 +190,12 @@ export default async function DashboardPage() {
           >
             AI Settings
           </Link>
+          <Link
+            href="/settings/email"
+            className="text-zinc-400 hover:text-white transition-colors"
+          >
+            Email Settings
+          </Link>
         </nav>
       </header>
 
@@ -209,6 +225,38 @@ export default async function DashboardPage() {
         <section className="mb-10">
           <h2 className="text-lg font-semibold mb-3">Profile</h2>
           <ProfileSummaryCard />
+        </section>
+
+        <section className="mb-10">
+          <h2 className="text-lg font-semibold mb-3">Email Provider</h2>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium uppercase ${
+                emailStatus.mode === "smtp"
+                  ? "border border-indigo-700/50 bg-indigo-950/30 text-indigo-400"
+                  : "border border-zinc-700 bg-zinc-800/50 text-zinc-400"
+              }`}>
+                {emailStatus.mode}
+              </span>
+              <span className="text-xs text-zinc-400">
+                {emailStatus.smtpConfigured ? "SMTP configured" : "SMTP not configured"}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="rounded-lg bg-zinc-800/50 p-3">
+                <p className="text-xs text-zinc-500">Real Sent Today</p>
+                <p className="text-lg font-semibold text-blue-400">{realSentToday}</p>
+              </div>
+              <div className="rounded-lg bg-zinc-800/50 p-3">
+                <p className="text-xs text-zinc-500">Real Failed Today</p>
+                <p className="text-lg font-semibold text-red-400">{realFailedToday}</p>
+              </div>
+              <div className="rounded-lg bg-zinc-800/50 p-3">
+                <p className="text-xs text-zinc-500">Daily Limit</p>
+                <p className="text-lg font-semibold text-white">{process.env.REAL_SEND_DAILY_LIMIT || "20"}</p>
+              </div>
+            </div>
+          </div>
         </section>
 
         {recentSends.length > 0 && (

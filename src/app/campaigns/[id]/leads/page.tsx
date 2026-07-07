@@ -43,6 +43,7 @@ export default async function CampaignLeadsPage({
           <Link href="/campaigns/new" className="text-zinc-400 hover:text-white transition-colors">New Campaign</Link>
           <Link href="/unsubscribes" className="text-zinc-400 hover:text-white transition-colors">Unsubscribes</Link>
           <Link href="/settings/ai" className="text-zinc-400 hover:text-white transition-colors">AI Settings</Link>
+          <Link href="/settings/email" className="text-zinc-400 hover:text-white transition-colors">Email Settings</Link>
         </nav>
       </header>
 
