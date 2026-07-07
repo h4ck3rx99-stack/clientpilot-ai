@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
     const campaign = await createCampaign(session.userId, {
       name, serviceToPitch, targetNiche, targetLocation, offer, cta,
-      dailySendLimit: Number(dailySendLimit) || 20,
+      dailySendLimit: Number(dailySendLimit) || 500,
       minimumFitScore: Number(minimumFitScore) || 60,
     });
 

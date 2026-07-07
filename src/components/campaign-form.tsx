@@ -68,8 +68,8 @@ export default function CampaignForm({
       localErrors.push("Target location is required");
     if (!body.offer?.trim()) localErrors.push("Offer is required");
     if (!body.cta?.trim()) localErrors.push("CTA is required");
-    if (body.dailySendLimit < 1 || body.dailySendLimit > 100)
-      localErrors.push("Daily send limit must be between 1 and 100");
+    if (body.dailySendLimit < 1 || body.dailySendLimit > 500)
+      localErrors.push("Daily send limit must be between 1 and 500");
     if (body.minimumFitScore < 0 || body.minimumFitScore > 100)
       localErrors.push("Minimum fit score must be between 0 and 100");
 
@@ -237,7 +237,7 @@ export default function CampaignForm({
             name="dailySendLimit"
             type="number"
             min={1}
-            max={100}
+            max={500}
             defaultValue={initial?.dailySendLimit ?? 20}
             className={inputClass()}
           />

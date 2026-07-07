@@ -6,11 +6,11 @@ import { getEnv } from "@/lib/env";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ draftId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { draftId } = await params;
+  const { id: draftId } = await params;
   if (!draftId) {
     return NextResponse.json({ error: "draftId is required" }, { status: 400 });
   }

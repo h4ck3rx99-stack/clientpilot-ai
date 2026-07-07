@@ -54,8 +54,8 @@ export function getEnv(): EnvVars {
     SMTP_PASS: process.env.SMTP_PASS || "",
     SMTP_FROM_NAME: process.env.SMTP_FROM_NAME || "",
     SMTP_FROM_EMAIL: process.env.SMTP_FROM_EMAIL || "",
-    REAL_SEND_DAILY_LIMIT: parseIntSafe(process.env.REAL_SEND_DAILY_LIMIT, 20),
-    REAL_SEND_BATCH_LIMIT: parseIntSafe(process.env.REAL_SEND_BATCH_LIMIT, 10),
+    REAL_SEND_DAILY_LIMIT: parseIntSafe(process.env.REAL_SEND_DAILY_LIMIT, 500),
+    REAL_SEND_BATCH_LIMIT: parseIntSafe(process.env.REAL_SEND_BATCH_LIMIT, 50),
     REAL_SEND_DELAY_MS: parseIntSafe(process.env.REAL_SEND_DELAY_MS, 5000),
   };
   return _env;

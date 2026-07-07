@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth/session";
 import { getPublicEnvInfo, getEnvironmentWarnings } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import AppShell from "@/components/app-shell";
+import ReDevOpsSetup from "./re-devops-setup";
 
 export default async function SystemPage() {
   const user = await requireUser();
@@ -48,6 +49,10 @@ export default async function SystemPage() {
         <Row label="Review queue" value="Enabled" ok />
         <Row label="Campaign required" value="Yes" ok />
         <Row label="Daily limits" value="Enabled" ok />
+      </Section>
+
+      <Section title="Personal Setup">
+        <ReDevOpsSetup />
       </Section>
 
       {warnings.length > 0 && (

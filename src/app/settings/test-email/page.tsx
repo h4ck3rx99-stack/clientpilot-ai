@@ -8,9 +8,9 @@ import { Alert } from "@/components/ui/alert";
 
 export default function TestEmailPage() {
   const router = useRouter();
-  const [recipientEmail, setRecipientEmail] = useState("");
-  const [subject, setSubject] = useState("ClientPilot AI test email");
-  const [body, setBody] = useState("This is a test email from ClientPilot AI.");
+  const [recipientEmail, setRecipientEmail] = useState("redevops3@gmail.com");
+  const [subject, setSubject] = useState("RE Dev Ops test email");
+  const [body, setBody] = useState("This is a test email from RE Dev Ops — ClientPilot AI.");
   const [confirmed, setConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ status?: string; error?: string } | null>(null);

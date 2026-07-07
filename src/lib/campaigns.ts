@@ -36,7 +36,7 @@ export async function createCampaign(userId: string, data: CampaignInput) {
       targetLocation: data.targetLocation,
       offer: data.offer,
       cta: data.cta,
-      dailySendLimit: data.dailySendLimit ?? 20,
+      dailySendLimit: data.dailySendLimit ?? 500,
       minimumFitScore: data.minimumFitScore ?? 60,
       status: "DRAFT",
     },
@@ -53,7 +53,7 @@ export async function updateCampaign(userId: string, id: string, data: CampaignI
       targetLocation: data.targetLocation,
       offer: data.offer,
       cta: data.cta,
-      dailySendLimit: data.dailySendLimit ?? 20,
+      dailySendLimit: data.dailySendLimit ?? 500,
       minimumFitScore: data.minimumFitScore ?? 60,
     },
   });

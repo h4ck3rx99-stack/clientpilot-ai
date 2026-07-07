@@ -37,13 +37,14 @@ export default async function DailyPage() {
         </Alert>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 mb-8">
         {[
           { label: "Queued emails", value: queuedEmails, color: "text-blue-400" },
           { label: "Follow-ups due", value: followUpsDue, color: "text-rose-400" },
           { label: "Drafts pending review", value: draftsPendingReview, color: "text-yellow-400" },
           { label: "Interested leads", value: interestedLeads, color: "text-emerald-400" },
           { label: "Meetings booked", value: meetingsBooked, color: "text-indigo-400" },
+          { label: "Daily cap", value: "500", color: "text-zinc-400" },
         ].map((stat) => (
           <div key={stat.label} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-center">
             <p className={`text-lg font-bold ${stat.color}`}>{stat.value}</p>

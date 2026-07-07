@@ -88,7 +88,7 @@ export async function getLaunchReadiness(userId: string): Promise<LaunchReadines
 
   email.push({ label: "Unsubscribe page available", status: "pass", detail: "/unsubscribe/[token] is public" });
 
-  const dailyLimit = parseInt(process.env.REAL_SEND_DAILY_LIMIT || "20", 10);
+  const dailyLimit = parseInt(process.env.REAL_SEND_DAILY_LIMIT || "500", 10);
   email.push({ label: "Real send daily limit", status: dailyLimit > 50 ? "warn" : "pass", detail: String(dailyLimit) });
   if (dailyLimit > 50) warnings.push("Real send daily limit is above 50");
 

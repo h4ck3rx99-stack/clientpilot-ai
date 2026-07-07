@@ -294,7 +294,7 @@ export async function sendDraft(userId: string, draftId: string): Promise<SendRe
 
   // Real SMTP sending
   try {
-    const realDailyLimit = parseInt(process.env.REAL_SEND_DAILY_LIMIT || "20", 10);
+    const realDailyLimit = parseInt(process.env.REAL_SEND_DAILY_LIMIT || "500", 10);
     const todayRealCount = await getTodayRealSendCount();
     if (todayRealCount >= realDailyLimit) {
       await createSkipLog(userId, draft, `Real send daily limit reached (${todayRealCount}/${realDailyLimit})`);
@@ -526,8 +526,8 @@ export async function sendQueuedEmailsForCampaign(
     return simulateSendQueuedEmailsForCampaign(userId, campaignId);
   }
 
-  const realDailyLimit = parseInt(process.env.REAL_SEND_DAILY_LIMIT || "20", 10);
-  const batchLimit = parseInt(process.env.REAL_SEND_BATCH_LIMIT || "10", 10);
+  const realDailyLimit = parseInt(process.env.REAL_SEND_DAILY_LIMIT || "500", 10);
+  const batchLimit = parseInt(process.env.REAL_SEND_BATCH_LIMIT || "50", 10);
   const delayMs = parseInt(process.env.REAL_SEND_DELAY_MS || "5000", 10);
 
   const todayRealCount = await getTodayRealSendCount();

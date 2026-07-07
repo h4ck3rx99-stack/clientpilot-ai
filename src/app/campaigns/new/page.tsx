@@ -19,7 +19,7 @@ const QUERY_TEMPLATES: Record<string, CampaignFormData> = {
     targetLocation: "",
     offer: "Free homepage audit",
     cta: "Would you be open to a quick 15-minute call this week?",
-    dailySendLimit: 10,
+    dailySendLimit: 500,
     minimumFitScore: 75,
   },
   "ai-automation": {
@@ -29,7 +29,7 @@ const QUERY_TEMPLATES: Record<string, CampaignFormData> = {
     targetLocation: "",
     offer: "Free automation workflow idea",
     cta: "Would you be open to a quick 15-minute call this week?",
-    dailySendLimit: 10,
+    dailySendLimit: 500,
     minimumFitScore: 75,
   },
   "dashboard-crm": {
@@ -39,7 +39,7 @@ const QUERY_TEMPLATES: Record<string, CampaignFormData> = {
     targetLocation: "",
     offer: "Free workflow audit",
     cta: "Would you be open to a quick 15-minute call this week?",
-    dailySendLimit: 10,
+    dailySendLimit: 500,
     minimumFitScore: 80,
   },
 };

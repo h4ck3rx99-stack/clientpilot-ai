@@ -151,8 +151,8 @@ export default function SimulatedSendCard({
             <div className="grid grid-cols-2 gap-2 text-xs text-zinc-500 pt-2 border-t border-rose-800/20">
               <span>Queued drafts: {queuedCount}</span>
               <span>Campaign daily limit: {dailySendLimit}</span>
-              <span>Real send daily limit: {process.env.NEXT_PUBLIC_REAL_SEND_DAILY_LIMIT || "20"}</span>
-              <span>Batch limit: {process.env.NEXT_PUBLIC_REAL_SEND_BATCH_LIMIT || "10"}</span>
+              <span>Real send daily limit: 500</span>
+              <span>Batch limit: 50</span>
             </div>
             <label className="flex items-start gap-2 cursor-pointer">
               <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="mt-0.5 size-4 rounded border-zinc-600 bg-zinc-800 accent-indigo-500" />
