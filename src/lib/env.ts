@@ -119,6 +119,8 @@ export type PublicEnvInfo = {
   batchLimit: number;
   bulkLeadLimit: number;
   bulkDelay: number;
+  googleAuthConfigured: boolean;
+  googleRedirectUri: string;
 };
 
 export function getPublicEnvInfo(): PublicEnvInfo {
@@ -136,5 +138,7 @@ export function getPublicEnvInfo(): PublicEnvInfo {
     batchLimit: env.REAL_SEND_BATCH_LIMIT,
     bulkLeadLimit: env.AI_MAX_BULK_LEADS_PER_RUN,
     bulkDelay: env.AI_BULK_DELAY_MS,
+    googleAuthConfigured: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    googleRedirectUri: process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/auth/google/callback",
   };
 }

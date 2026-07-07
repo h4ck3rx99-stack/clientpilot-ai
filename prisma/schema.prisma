@@ -11,7 +11,10 @@ model User {
   id                String             @id @default(cuid())
   name              String?
   email             String             @unique
-  passwordHash      String
+  passwordHash      String?
+  googleId          String?            @unique
+  image             String?
+  authProvider      String             @default("credentials")
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   profiles          UserProfile[]

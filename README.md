@@ -129,6 +129,41 @@ Recommended flow for first outreach:
 16. Export backup regularly at `/settings/backup`
 17. Run the launch checklist at `/launch` before going real
 
+## Google Login
+
+ClientPilot AI supports optional Google login via OAuth 2.0 / OpenID Connect.
+
+### Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Create an OAuth 2.0 Client ID (Web application)
+3. Add authorized redirect URI:
+   ```
+   http://localhost:3000/api/auth/google/callback
+   ```
+4. Copy the Client ID and Client Secret
+5. Add to `.env`:
+   ```
+   GOOGLE_CLIENT_ID=your-client-id
+   GOOGLE_CLIENT_SECRET=your-client-secret
+   GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
+   ```
+6. Restart the dev server and test "Continue with Google"
+
+### Scopes
+
+- Only `openid`, `email`, and `profile` scopes are used.
+- Gmail sending scopes are **not** requested.
+- Google login is for authentication only, not for sending email.
+
+### Production
+
+For production, update `GOOGLE_REDIRECT_URI` to:
+```
+https://your-domain.com/api/auth/google/callback
+```
+Add the same URL as an authorized redirect URI in Google Cloud Console.
+
 ## Database Note
 
 **SQLite** is fine for local and personal usage. For a public hosted SaaS in the future, migrate to **Postgres**.

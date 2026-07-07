@@ -54,25 +54,33 @@ export async function getSession(): Promise<SessionPayload | null> {
   }
 }
 
-export async function getCurrentUser() {
+export type CurrentUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  image: string | null;
+  authProvider: string;
+};
+
+export async function getCurrentUser(): Promise<CurrentUser | null> {
   const session = await getSession();
   if (!session) return null;
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, email: true, name: true },
+    select: { id: true, email: true, name: true, image: true, authProvider: true },
   });
 
   return user;
 }
 
-export async function requireUser() {
+export async function requireUser(): Promise<CurrentUser> {
   const session = await getSession();
   if (!session) redirect("/login");
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, email: true, name: true },
+    select: { id: true, email: true, name: true, image: true, authProvider: true },
   });
 
   if (!user) redirect("/login");

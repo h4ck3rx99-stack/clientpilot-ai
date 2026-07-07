@@ -63,6 +63,18 @@ Use this checklist before sending real emails from a deployed instance.
 - [ ] Monitor unsubscribe rates
 - [ ] Adjust daily limits based on deliverability
 
+## Google Login (Optional)
+
+- [ ] Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in production environment
+- [ ] Set production `GOOGLE_REDIRECT_URI`:
+  ```
+  https://your-domain.com/api/auth/google/callback
+  ```
+- [ ] Add production redirect URI in Google Cloud Console
+- [ ] Keep `GOOGLE_CLIENT_SECRET` private (never expose to browser)
+- [ ] Test Google login on production before real use
+- [ ] Verify email/password login still works alongside Google login
+
 ## Launch Checklist
 
 - [ ] Run the launch checklist at `/launch`

@@ -37,6 +37,12 @@ export default async function SystemPage() {
         <Row label="Batch limit" value={String(env.batchLimit)} />
       </Section>
 
+      <Section title="Auth">
+        <Row label="Credentials login" value="Enabled" ok />
+        <Row label="Google login configured" value={env.googleAuthConfigured ? "Yes" : "No"} ok={env.googleAuthConfigured} />
+        <Row label="Google redirect URI" value={env.googleRedirectUri} ok={!env.googleRedirectUri.includes("localhost") || env.environment === "development"} />
+      </Section>
+
       <Section title="Safety Status">
         <Row label="Unsubscribe system" value="Available" ok />
         <Row label="Review queue" value="Enabled" ok />

@@ -142,6 +142,26 @@ Manual test checklist for pre-release stabilization.
 - [ ] POST /api/campaigns creates with userId
 - [ ] GET /api/campaigns returns user's campaigns only
 
+## Google Login
+
+- [ ] Google login creates a new local user (first-time Google login)
+- [ ] Google login links to existing email/password account (same email)
+- [ ] Google login does not duplicate user by email
+- [ ] Google login preserves existing campaigns/leads/drafts after linking
+- [ ] Email/password login still works alongside Google login
+- [ ] Google user without password cannot use email/password login
+- [ ] Logout works for Google user
+- [ ] Login again with Google after logout works (state cleared properly)
+- [ ] /api/auth/google redirects to Google consent page
+- [ ] Google OAuth state parameter validation works (CSRF protection)
+- [ ] Invalid state returns error redirect
+- [ ] Google login with unverified email shows error
+- [ ] Missing GOOGLE_CLIENT_ID shows error
+- [ ] Profile page shows correct auth method for Google user
+- [ ] Profile page shows correct auth method for credentials user
+- [ ] Profile page shows Google profile image if available
+- [ ] System settings page shows Google auth config status
+
 ## Edge Cases
 
 - [ ] Empty state renders for zero campaigns, leads, drafts
