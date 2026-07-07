@@ -106,6 +106,27 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ message: `${leads.length} sample drafts generated.` });
       }
 
+      case "delete-sample-data": {
+        const campaigns = await prisma.campaign.findMany({ where: { userId: user.id }, select: { id: true } });
+        const campaignIds = campaigns.map(c => c.id);
+        await prisma.leadActivity.deleteMany({ where: { campaignId: { in: campaignIds } } });
+        await prisma.emailSendLog.deleteMany({ where: { campaignId: { in: campaignIds } } });
+        await prisma.emailDraft.deleteMany({ where: { userId: user.id } });
+        await prisma.lead.deleteMany({ where: { userId: user.id } });
+        await prisma.campaign.deleteMany({ where: { userId: user.id } });
+        return NextResponse.json({ message: "All campaigns, leads, drafts, and logs deleted." });
+      }
+
+      case "clear-failed-ai-logs": {
+        const deleted = await prisma.aIUsageLog.deleteMany({ where: { userId: user.id, success: false } });
+        return NextResponse.json({ message: `${deleted.count} failed AI usage logs cleared.` });
+      }
+
+      case "clear-cancelled-drafts": {
+        const deleted = await prisma.emailDraft.deleteMany({ where: { userId: user.id, status: "CANCELLED" } });
+        return NextResponse.json({ message: `${deleted.count} cancelled drafts cleared.` });
+      }
+
       default:
         return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }

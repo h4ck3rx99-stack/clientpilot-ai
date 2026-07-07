@@ -348,6 +348,15 @@ export default async function CampaignDetailPage({
           </div>
         </div>
 
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 mb-6">
+          <h2 className="text-sm font-semibold text-white mb-3">Export</h2>
+          <div className="flex flex-wrap gap-3">
+            <a href={`/api/campaigns/${campaign.id}/export/leads`} className="inline-flex h-9 items-center justify-center rounded-lg border border-zinc-700 px-3.5 text-xs font-medium text-zinc-300 hover:bg-zinc-800 transition-colors">Export Leads CSV</a>
+            <a href={`/api/campaigns/${campaign.id}/export/drafts`} className="inline-flex h-9 items-center justify-center rounded-lg border border-zinc-700 px-3.5 text-xs font-medium text-zinc-300 hover:bg-zinc-800 transition-colors">Export Drafts CSV</a>
+            <a href={`/api/campaigns/${campaign.id}/export/pipeline`} className="inline-flex h-9 items-center justify-center rounded-lg border border-zinc-700 px-3.5 text-xs font-medium text-zinc-300 hover:bg-zinc-800 transition-colors">Export Pipeline CSV</a>
+          </div>
+        </div>
+
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-white">

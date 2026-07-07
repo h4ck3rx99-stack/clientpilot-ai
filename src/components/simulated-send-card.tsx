@@ -39,6 +39,7 @@ export default function SimulatedSendCard({
   const [simLoading, setSimLoading] = useState(false);
   const [realLoading, setRealLoading] = useState(false);
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
   const router = useRouter();
 
   const remaining = Math.max(0, dailySendLimit - sentToday);
@@ -59,18 +60,21 @@ export default function SimulatedSendCard({
   }
 
   async function handleRealSend() {
+    if (isSmtpMode && !confirmed) return;
     setRealLoading(true);
     setSummary(null);
     const res = await fetch("/api/campaigns/send-queued", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ campaignId }),
+      body: JSON.stringify({ campaignId, confirmed }),
     });
     const data: Summary = await res.json();
     setSummary(data);
     router.refresh();
     setRealLoading(false);
   }
+
+  const canRealSend = queuedCount > 0 && (!isSmtpMode || confirmed) && (emailMode !== "smtp" || smtpConfigured);
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
@@ -93,9 +97,7 @@ export default function SimulatedSendCard({
             {emailMode}
           </span>
           {smtpConfigured && (
-            <span className="inline-flex items-center rounded-full border border-green-700/50 bg-green-950/30 px-2.5 py-0.5 text-[10px] font-medium text-green-400">
-              SMTP Ready
-            </span>
+            <span className="inline-flex items-center rounded-full border border-green-700/50 bg-green-950/30 px-2.5 py-0.5 text-[10px] font-medium text-green-400">SMTP Ready</span>
           )}
         </div>
       </div>
@@ -129,7 +131,7 @@ export default function SimulatedSendCard({
         </button>
         <button
           onClick={handleRealSend}
-          disabled={realLoading || queuedCount === 0 || (emailMode === "smtp" && !smtpConfigured)}
+          disabled={realLoading || !canRealSend}
           className="inline-flex h-10 flex-1 items-center justify-center rounded-lg bg-indigo-500 px-4 text-sm font-medium text-white hover:bg-indigo-400 disabled:opacity-40 transition-colors"
         >
           {realLoading ? "Sending..." : `Send Queued Emails (${queuedCount})`}
@@ -137,11 +139,26 @@ export default function SimulatedSendCard({
       </div>
 
       {isSmtpMode && (
-        <div className="rounded-lg border border-indigo-800/30 bg-indigo-950/20 p-3">
-          <p className="text-xs text-indigo-400">
-            Only reviewed QUEUED drafts will be sent. Unsubscribed contacts and unsafe leads will be skipped.
-          </p>
-        </div>
+        <>
+          <div className="rounded-xl border border-rose-800/30 bg-rose-950/10 p-4 space-y-3">
+            <p className="text-xs font-semibold text-rose-300">Real emails will be sent. Only reviewed QUEUED drafts are eligible.</p>
+            <div className="grid grid-cols-2 gap-2 text-xs text-zinc-400">
+              <span>Queued drafts: {queuedCount}</span>
+              <span>Campaign daily limit: {dailySendLimit}</span>
+              <span>Real send daily limit: {process.env.NEXT_PUBLIC_REAL_SEND_DAILY_LIMIT || "20"}</span>
+              <span>Batch limit: {process.env.NEXT_PUBLIC_REAL_SEND_BATCH_LIMIT || "10"}</span>
+            </div>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={confirmed}
+                onChange={(e) => setConfirmed(e.target.checked)}
+                className="mt-0.5 size-4 rounded border-zinc-600 bg-zinc-800 accent-indigo-500"
+              />
+              <span className="text-xs text-zinc-300">I understand real emails will be sent.</span>
+            </label>
+          </div>
+        </>
       )}
 
       {campaignStatus !== "ACTIVE" && (

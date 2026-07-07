@@ -59,6 +59,10 @@ model Campaign {
   leads           Lead[]
   emailSendLogs   EmailSendLog[]
   leadActivities  LeadActivity[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Lead {
@@ -93,6 +97,14 @@ model Lead {
   emailDrafts          EmailDraft[]
   emailSendLogs        EmailSendLog[]
   activities           LeadActivity[]
+
+  @@index([userId])
+  @@index([campaignId])
+  @@index([email])
+  @@index([status])
+  @@index([pipelineStatus])
+  @@index([fitScore])
+  @@index([nextFollowUpAt])
 }
 
 model EmailDraft {
@@ -112,6 +124,12 @@ model EmailDraft {
   aiProviderUsed String?
   aiModelUsed    String?
   sendLogs       EmailSendLog[]
+
+  @@index([userId])
+  @@index([leadId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
 }
 
 model EmailSendLog {
@@ -134,6 +152,12 @@ model EmailSendLog {
   messageId      String?
   sentAt         DateTime?
   createdAt      DateTime   @default(now())
+
+  @@index([userId])
+  @@index([campaignId])
+  @@index([status])
+  @@index([sentAt])
+  @@index([createdAt])
 }
 
 model LeadActivity {
@@ -147,6 +171,11 @@ model LeadActivity {
   type       String
   message    String
   createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([campaignId])
+  @@index([leadId])
+  @@index([createdAt])
 }
 
 model Unsubscribe {
@@ -156,6 +185,9 @@ model Unsubscribe {
   userId    String?
   user      User?    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([email])
 }
 
 model UnsubscribeToken {
@@ -185,6 +217,16 @@ model OnboardingState {
   updatedAt            DateTime @updatedAt
 }
 
+model UserActionLog {
+  id         String   @id @default(cuid())
+  userId     String
+  actionType String
+  createdAt  DateTime @default(now())
+
+  @@index([userId, actionType, createdAt])
+  @@index([userId, createdAt])
+}
+
 model AIUsageLog {
   id           String   @id @default(cuid())
   provider     String
@@ -195,4 +237,9 @@ model AIUsageLog {
   userId       String?
   user         User?    @relation(fields: [userId], references: [id])
   createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([provider])
+  @@index([taskType])
+  @@index([createdAt])
 }
