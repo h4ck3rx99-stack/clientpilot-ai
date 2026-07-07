@@ -60,6 +60,8 @@ model Lead {
   notes               String?
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
+  aiProviderUsed      String?
+  aiModelUsed         String?
   emailDrafts         EmailDraft[]
   emailSendLogs       EmailSendLog[]
   activities          LeadActivity[]
@@ -77,6 +79,8 @@ model EmailDraft {
   sentAt          DateTime?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+  aiProviderUsed  String?
+  aiModelUsed     String?
   sendLogs        EmailSendLog[]
 }
 
@@ -113,4 +117,14 @@ model Unsubscribe {
   email     String   @unique
   reason    String?
   createdAt DateTime @default(now())
+}
+
+model AIUsageLog {
+  id           String   @id @default(cuid())
+  provider     String
+  model        String
+  taskType     String
+  success      Boolean
+  errorMessage String?
+  createdAt    DateTime @default(now())
 }

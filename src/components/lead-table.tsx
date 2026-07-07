@@ -2,6 +2,7 @@ import Link from "next/link";
 import StatusBadge from "./status-badge";
 import { AnalyzeLeadButton } from "./analyze-buttons";
 import { GenerateDraftButton } from "./generate-draft-buttons";
+import { AnalyzeAndDraftButton } from "./ai-lead-action-buttons";
 import { PipelineActionButtons } from "./pipeline-action-buttons";
 import FitScoreBadge from "./fit-score-badge";
 
@@ -83,6 +84,7 @@ export default function LeadTable({
               </td>
               <td className="py-3">
                 <div className="flex flex-col gap-1">
+                  <AnalyzeAndDraftButton leadId={lead.id} />
                   <AnalyzeLeadButton leadId={lead.id} />
                   {lead.status === "ANALYZED" && lead.fitScore >= 50 && (
                     <GenerateDraftButton

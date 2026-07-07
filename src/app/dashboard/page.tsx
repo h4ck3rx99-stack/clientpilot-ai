@@ -26,6 +26,7 @@ export default async function DashboardPage() {
     wonCount,
     followUpsDue,
     fuDraftsPending,
+    recentAiUsage,
   ] = await Promise.all([
     getRecentCampaigns(),
     prisma.emailSendLog.count({
@@ -68,6 +69,10 @@ export default async function DashboardPage() {
         type: "FOLLOW_UP",
         status: { in: ["DRAFT", "QUEUED"] },
       },
+    }),
+    prisma.aIUsageLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 5,
     }),
   ]);
 
@@ -159,6 +164,12 @@ export default async function DashboardPage() {
             className="text-zinc-400 hover:text-white transition-colors"
           >
             Unsubscribes
+          </Link>
+          <Link
+            href="/settings/ai"
+            className="text-zinc-400 hover:text-white transition-colors"
+          >
+            AI Settings
           </Link>
         </nav>
       </header>
@@ -294,6 +305,55 @@ export default async function DashboardPage() {
                         </td>
                         <td className="py-3 pr-3 text-xs text-zinc-400 max-w-[200px] truncate">
                           {a.message}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {recentAiUsage.length > 0 && (
+          <section className="mb-10">
+            <h2 className="text-lg font-semibold mb-3">AI Usage</h2>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-zinc-800 text-left text-xs text-zinc-500 uppercase tracking-wider">
+                      <th className="pb-3 pr-4 pt-3 pl-5 font-medium">Date</th>
+                      <th className="pb-3 pr-4 pt-3 font-medium">Provider</th>
+                      <th className="pb-3 pr-4 pt-3 font-medium">Model</th>
+                      <th className="pb-3 pr-4 pt-3 font-medium">Task</th>
+                      <th className="pb-3 pr-3 pt-3 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentAiUsage.map((log) => (
+                      <tr key={log.id} className="border-b border-zinc-800/50 last:border-0">
+                        <td className="py-3 pr-4 pl-5 text-zinc-500 whitespace-nowrap text-xs">
+                          {new Date(log.createdAt).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </td>
+                        <td className="py-3 pr-4 text-xs text-zinc-300 capitalize">{log.provider.replace("-", " ")}</td>
+                        <td className="py-3 pr-4 text-xs text-zinc-400">{log.model}</td>
+                        <td className="py-3 pr-4 text-xs text-zinc-400">{log.taskType.replace(/_/g, " ")}</td>
+                        <td className="py-3 pr-3">
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                              log.success
+                                ? "border border-green-700/50 bg-green-950/30 text-green-400"
+                                : "border border-rose-700/50 bg-rose-950/30 text-rose-400"
+                            }`}
+                          >
+                            {log.success ? "Success" : "Failed"}
+                          </span>
                         </td>
                       </tr>
                     ))}

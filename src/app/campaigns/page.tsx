@@ -42,13 +42,19 @@ export default async function CampaignsPage() {
           >
             New Campaign
           </Link>
-          <Link
-            href="/unsubscribes"
-            className="text-zinc-400 hover:text-white transition-colors"
-          >
-            Unsubscribes
-          </Link>
-        </nav>
+            <Link
+              href="/unsubscribes"
+              className="text-zinc-400 hover:text-white transition-colors"
+            >
+              Unsubscribes
+            </Link>
+            <Link
+              href="/settings/ai"
+              className="text-zinc-400 hover:text-white transition-colors"
+            >
+              AI Settings
+            </Link>
+          </nav>
       </header>
 
       <main className="flex-1 px-6 py-8 max-w-5xl mx-auto w-full">

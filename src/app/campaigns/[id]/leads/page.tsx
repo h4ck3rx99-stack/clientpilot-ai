@@ -7,6 +7,7 @@ import LeadTable from "@/components/lead-table";
 import EmptyState from "@/components/empty-state";
 import { AnalyzeAllButton } from "@/components/analyze-buttons";
 import { GenerateDraftsAllButton } from "@/components/generate-draft-buttons";
+import { AnalyzeAndDraftAllButton } from "@/components/ai-lead-action-buttons";
 
 export default async function CampaignLeadsPage({
   params,
@@ -41,6 +42,7 @@ export default async function CampaignLeadsPage({
           <Link href="/campaigns" className="text-zinc-400 hover:text-white transition-colors">Campaigns</Link>
           <Link href="/campaigns/new" className="text-zinc-400 hover:text-white transition-colors">New Campaign</Link>
           <Link href="/unsubscribes" className="text-zinc-400 hover:text-white transition-colors">Unsubscribes</Link>
+          <Link href="/settings/ai" className="text-zinc-400 hover:text-white transition-colors">AI Settings</Link>
         </nav>
       </header>
 
@@ -60,6 +62,7 @@ export default async function CampaignLeadsPage({
             </p>
           </div>
           <div className="flex gap-3">
+            {count > 0 && <AnalyzeAndDraftAllButton campaignId={id} />}
             {count > 0 && <AnalyzeAllButton campaignId={id} />}
             <GenerateDraftsAllButton campaignId={id} />
             <Link
