@@ -5,13 +5,7 @@ type NavItem = { label: string; href: string; developmentOnly?: boolean; section
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard" },
-  { label: "Daily", href: "/daily" },
-  { label: "Playbook", href: "/playbook/first-50" },
-  { label: "Launch", href: "/launch" },
-  { label: "Onboarding", href: "/onboarding" },
-  { label: "Profile", href: "/profile" },
-  { label: "Campaigns", href: "/campaigns" },
-  { label: "New Campaign", href: "/campaigns/new" },
+  { label: "Inbox", href: "/inbox" },
   { label: "Unsubscribes", href: "/unsubscribes" },
   { label: "AI Settings", href: "/settings/ai" },
   { label: "Email Settings", href: "/settings/email" },
@@ -29,7 +23,7 @@ function isActive(activePage: string, itemHref: string): boolean {
   return activePage.startsWith(itemHref);
 }
 
-export default async function AppShell({ activePage, email, children }: { activePage: string; email: string; children: React.ReactNode }) {
+export default function AppShell({ activePage, email, children }: { activePage: string; email: string; children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Topbar */}

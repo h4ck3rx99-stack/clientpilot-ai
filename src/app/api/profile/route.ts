@@ -8,7 +8,7 @@ export async function GET() {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const profile = await getProfile(session.userId);
     return NextResponse.json(profile);
-  } catch {
+  } catch (error) {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -26,9 +26,8 @@ export async function PUT(request: Request) {
       senderName,
       senderEmail,
       services,
-      proof,
-      tone,
       defaultCTA,
+      calendarLink,
     } = body;
 
     const errors: string[] = [];
@@ -49,13 +48,13 @@ export async function PUT(request: Request) {
       senderName: senderName.trim(),
       senderEmail: senderEmail.trim(),
       services: services.trim(),
-      proof: proof?.trim(),
-      tone: tone?.trim(),
       defaultCTA: defaultCTA.trim(),
+      calendarLink: calendarLink?.trim() || undefined,
     });
 
     return NextResponse.json(profile, { status: 200 });
-  } catch {
+  } catch (error) {
+    console.error("PUT Profile Error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

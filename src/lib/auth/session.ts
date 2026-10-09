@@ -60,6 +60,12 @@ export type CurrentUser = {
   name: string | null;
   image: string | null;
   authProvider: string;
+  businessName: string | null;
+  senderName: string | null;
+  senderEmail: string | null;
+  services: string | null;
+  defaultCTA: string | null;
+  calendarLink: string | null;
 };
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
@@ -68,7 +74,19 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, email: true, name: true, image: true, authProvider: true },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      image: true,
+      authProvider: true,
+      businessName: true,
+      senderName: true,
+      senderEmail: true,
+      services: true,
+      defaultCTA: true,
+      calendarLink: true,
+    },
   });
 
   return user;
@@ -80,7 +98,19 @@ export async function requireUser(): Promise<CurrentUser> {
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, email: true, name: true, image: true, authProvider: true },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      image: true,
+      authProvider: true,
+      businessName: true,
+      senderName: true,
+      senderEmail: true,
+      services: true,
+      defaultCTA: true,
+      calendarLink: true,
+    },
   });
 
   if (!user) redirect("/login");

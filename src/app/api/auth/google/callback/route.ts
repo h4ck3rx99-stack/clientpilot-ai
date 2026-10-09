@@ -70,16 +70,5 @@ export async function GET(request: NextRequest) {
 }
 
 async function redirectAfterLogin(userId: string): Promise<NextResponse> {
-  const onboarding = await prisma.onboardingState.findUnique({ where: { userId } });
-  const incomplete = onboarding && !onboarding.dismissed && (
-    !onboarding.profileCompleted ||
-    !onboarding.firstCampaignCreated ||
-    !onboarding.firstLeadsAdded ||
-    !onboarding.firstLeadsAnalyzed ||
-    !onboarding.firstDraftGenerated ||
-    !onboarding.firstDraftQueued ||
-    !onboarding.firstSendCompleted
-  );
-  const destination = incomplete ? "/onboarding" : "/dashboard";
-  return NextResponse.redirect(new URL(destination, BASE_URL()));
+  return NextResponse.redirect(new URL("/dashboard", BASE_URL()));
 }

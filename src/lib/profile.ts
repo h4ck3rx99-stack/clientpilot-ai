@@ -5,26 +5,47 @@ export type ProfileData = {
   senderName: string;
   senderEmail: string;
   services: string;
-  proof?: string;
-  tone?: string;
   defaultCTA: string;
+  calendarLink?: string;
 };
 
 export async function getProfile(userId: string) {
-  return prisma.userProfile.findFirst({ where: { userId } });
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      businessName: true,
+      senderName: true,
+      senderEmail: true,
+      services: true,
+      defaultCTA: true,
+      calendarLink: true,
+      email: true,
+      name: true,
+    },
+  });
+
+  if (!user) return null;
+
+  return {
+    businessName: user.businessName,
+    senderName: user.senderName || user.name,
+    senderEmail: user.senderEmail || user.email,
+    services: user.services,
+    defaultCTA: user.defaultCTA,
+    calendarLink: user.calendarLink,
+  };
 }
 
 export async function upsertProfile(userId: string, data: ProfileData) {
-  const existing = await prisma.userProfile.findFirst({
-    where: { userId },
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      businessName: data.businessName,
+      senderName: data.senderName,
+      senderEmail: data.senderEmail,
+      services: data.services,
+      defaultCTA: data.defaultCTA,
+      calendarLink: data.calendarLink,
+    },
   });
-
-  if (existing) {
-    return prisma.userProfile.update({
-      where: { id: existing.id },
-      data,
-    });
-  }
-
-  return prisma.userProfile.create({ data: { ...data, userId } });
 }

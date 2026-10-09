@@ -43,53 +43,11 @@ async function main() {
   const userId = devUser.id;
   let claimed = 0;
 
-  const profileCount = await prisma.userProfile.count({ where: { userId: null } });
-  if (profileCount > 0) {
-    await prisma.userProfile.updateMany({ where: { userId: null }, data: { userId } });
-    claimed += profileCount;
-    console.log(`  UserProfile: ${profileCount}`);
-  }
-
-  const campaignCount = await prisma.campaign.count({ where: { userId: null } });
-  if (campaignCount > 0) {
-    await prisma.campaign.updateMany({ where: { userId: null }, data: { userId } });
-    claimed += campaignCount;
-    console.log(`  Campaign: ${campaignCount}`);
-  }
-
-  const leadCount = await prisma.lead.count({ where: { userId: null } });
+  const leadCount = await prisma.lead.count({ where: { userId: "" } });
   if (leadCount > 0) {
-    await prisma.lead.updateMany({ where: { userId: null }, data: { userId } });
+    await prisma.lead.updateMany({ where: { userId: "" }, data: { userId } });
     claimed += leadCount;
     console.log(`  Lead: ${leadCount}`);
-  }
-
-  const draftCount = await prisma.emailDraft.count({ where: { userId: null } });
-  if (draftCount > 0) {
-    await prisma.emailDraft.updateMany({ where: { userId: null }, data: { userId } });
-    claimed += draftCount;
-    console.log(`  EmailDraft: ${draftCount}`);
-  }
-
-  const logCount = await prisma.emailSendLog.count({ where: { userId: null } });
-  if (logCount > 0) {
-    await prisma.emailSendLog.updateMany({ where: { userId: null }, data: { userId } });
-    claimed += logCount;
-    console.log(`  EmailSendLog: ${logCount}`);
-  }
-
-  const activityCount = await prisma.leadActivity.count({ where: { userId: null } });
-  if (activityCount > 0) {
-    await prisma.leadActivity.updateMany({ where: { userId: null }, data: { userId } });
-    claimed += activityCount;
-    console.log(`  LeadActivity: ${activityCount}`);
-  }
-
-  const aiLogCount = await prisma.aIUsageLog.count({ where: { userId: null } });
-  if (aiLogCount > 0) {
-    await prisma.aIUsageLog.updateMany({ where: { userId: null }, data: { userId } });
-    claimed += aiLogCount;
-    console.log(`  AIUsageLog: ${aiLogCount}`);
   }
 
   const unsubCount = await prisma.unsubscribe.count({ where: { userId: null } });

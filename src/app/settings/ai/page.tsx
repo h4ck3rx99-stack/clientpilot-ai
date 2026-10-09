@@ -1,7 +1,6 @@
 import { getProviderStatuses } from "@/lib/ai";
 import { requireUser } from "@/lib/auth/session";
 import AppShell from "@/components/app-shell";
-import SetupStatusCard from "@/components/setup-status-card";
 import { CardSection } from "@/components/ui/card";
 
 export default async function AISettingsPage() {
@@ -19,10 +18,6 @@ export default async function AISettingsPage() {
   return (
     <AppShell activePage="/settings/ai" email={user.email || ""}>
       <h1 className="text-2xl font-bold mb-6">AI Settings</h1>
-
-      <div className="mb-8">
-        <SetupStatusCard userId={user.id} />
-      </div>
 
       <CardSection title="Recommended Zero-Budget Setup" className="border-indigo-800/30 bg-indigo-950/10 mb-8">
         <div className="space-y-2">

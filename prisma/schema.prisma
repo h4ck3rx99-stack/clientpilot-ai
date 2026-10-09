@@ -8,258 +8,94 @@ datasource db {
 }
 
 model User {
-  id                String             @id @default(cuid())
-  name              String?
-  email             String             @unique
-  passwordHash      String?
-  googleId          String?            @unique
-  image             String?
-  authProvider      String             @default("credentials")
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  profiles          UserProfile[]
-  campaigns         Campaign[]
-  leads             Lead[]
-  emailDrafts       EmailDraft[]
-  emailSendLogs     EmailSendLog[]
-  activities        LeadActivity[]
-  aiUsageLogs       AIUsageLog[]
-  unsubscribes      Unsubscribe[]
-  unsubscribeTokens UnsubscribeToken[]
-  onboardingState   OnboardingState?
-  testEmailLogs     TestEmailLog[]
-}
-
-model UserProfile {
-  id           String   @id @default(cuid())
-  userId       String?
-  user         User?    @relation(fields: [userId], references: [id])
+  id           String        @id @default(cuid())
+  name         String?
+  email        String        @unique
+  passwordHash String?
+  googleId     String?       @unique
+  image        String?
+  authProvider String        @default("credentials")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  // Sender Profile Fields
   businessName String?
   senderName   String?
   senderEmail  String?
   services     String?
-  proof        String?
-  tone         String?
   defaultCTA   String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
+  calendarLink String?
 
-model Campaign {
-  id              String         @id @default(cuid())
-  userId          String?
-  user            User?          @relation(fields: [userId], references: [id])
-  name            String
-  serviceToPitch  String
-  targetNiche     String
-  targetLocation  String
-  offer           String
-  cta             String
-  dailySendLimit  Int            @default(20)
-  minimumFitScore Int            @default(60)
-  status          String         @default("DRAFT")
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  leads           Lead[]
-  emailSendLogs   EmailSendLog[]
-  leadActivities  LeadActivity[]
-
-  @@index([userId])
-  @@index([status])
-  @@index([createdAt])
+  leads        Lead[]
+  unsubscribes Unsubscribe[]
 }
 
 model Lead {
-  id                   String         @id @default(cuid())
-  campaignId           String
-  campaign             Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  userId               String?
-  user                 User?          @relation(fields: [userId], references: [id])
+  id                   String      @id @default(cuid())
+  userId               String
+  user                 User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   companyName          String
   website              String?
   email                String?
-  sourceUrl            String?
+  phone                String?
+  location             String?
   industry             String?
-  painPoint            String?
-  offerAngle           String?
-  personalizationLine  String?
-  fitScore             Int            @default(0)
-  scoreBreakdown       String?
-  status               String         @default("NEW")
-  pipelineStatus       String         @default("NOT_CONTACTED")
+  
+  // Pitch configuration context
+  serviceToPitch       String
+  targetNiche          String
+  targetLocation       String
+  
+  // Status: DISCOVERED (pending review), ACCEPTED (accepted in campaign), DECLINED (rejected during discovery)
+  status               String      @default("DISCOVERED")
+  
+  // AI discovery suitability explanation
+  suitabilityAnalysis  String?
+  
+  // Website Audit (outdated design, poor mobile responsiveness, slow loading speed, weak navigation, missing calls to action, broken pages, poor SEO structure, or confusing booking/contact process)
+  // Stored as JSON string
+  websiteAudit         String?     
+  
+  // Email outreach fields
+  emailSubject         String?
+  emailBody            String?
+  emailStatus          String      @default("DRAFT") // DRAFT, QUEUED, SENT
+  sentAt               DateTime?
+  
+  // Follow-up tracking
+  followUpCount        Int         @default(0)
   lastContactedAt      DateTime?
-  repliedAt            DateTime?
   nextFollowUpAt       DateTime?
-  notes                String?
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
-  aiProviderUsed       String?
-  aiModelUsed          String?
-  discoverySource      String?
-  extractionConfidence Int?
-  extractionNotes      String?
-  emailDrafts          EmailDraft[]
-  emailSendLogs        EmailSendLog[]
-  activities           LeadActivity[]
+  
+  // Pipeline stage
+  pipelineStatus       String      @default("NOT_CONTACTED") // NOT_CONTACTED, CONTACTED, REPLIED, INTERESTED, MEETING_BOOKED, WON, LOST, NOT_INTERESTED
+  
+  replies              LeadReply[]
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
 
   @@index([userId])
-  @@index([campaignId])
-  @@index([email])
   @@index([status])
   @@index([pipelineStatus])
-  @@index([fitScore])
-  @@index([nextFollowUpAt])
 }
 
-model EmailDraft {
-  id             String         @id @default(cuid())
-  leadId         String
-  lead           Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  userId         String?
-  user           User?          @relation(fields: [userId], references: [id])
-  subject        String
-  body           String
-  status         String         @default("DRAFT")
-  type           String         @default("INITIAL")
-  followUpNumber Int            @default(0)
-  sentAt         DateTime?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  aiProviderUsed String?
-  aiModelUsed    String?
-  sendLogs       EmailSendLog[]
+model LeadReply {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  body      String
+  category  String   // interested, asking_pricing, more_info, not_interested, follow_up_later, auto_reply, unsubscribe
+  createdAt DateTime @default(now())
 
-  @@index([userId])
   @@index([leadId])
-  @@index([status])
-  @@index([type])
-  @@index([createdAt])
-}
-
-model EmailSendLog {
-  id             String     @id @default(cuid())
-  emailDraftId   String
-  emailDraft     EmailDraft @relation(fields: [emailDraftId], references: [id], onDelete: Cascade)
-  campaignId     String
-  campaign       Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  leadId         String
-  lead           Lead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  userId         String?
-  user           User?      @relation(fields: [userId], references: [id])
-  recipientEmail String
-  subject        String
-  status         String     @default("SENT")
-  reason         String?
-  simulated      Boolean    @default(true)
-  realSend       Boolean    @default(false)
-  provider       String?
-  messageId      String?
-  sentAt         DateTime?
-  createdAt      DateTime   @default(now())
-
-  @@index([userId])
-  @@index([campaignId])
-  @@index([status])
-  @@index([sentAt])
-  @@index([createdAt])
-}
-
-model LeadActivity {
-  id         String   @id @default(cuid())
-  leadId     String
-  lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  campaignId String
-  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  userId     String?
-  user       User?    @relation(fields: [userId], references: [id])
-  type       String
-  message    String
-  createdAt  DateTime @default(now())
-
-  @@index([userId])
-  @@index([campaignId])
-  @@index([leadId])
-  @@index([createdAt])
 }
 
 model Unsubscribe {
   id        String   @id @default(cuid())
   email     String   @unique
-  reason    String?
   userId    String?
   user      User?    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
 
-  @@index([userId])
   @@index([email])
-}
-
-model UnsubscribeToken {
-  id         String   @id @default(cuid())
-  email      String
-  token      String   @unique
-  campaignId String?
-  leadId     String?
-  userId     String?
-  user       User?    @relation(fields: [userId], references: [id])
-  createdAt  DateTime @default(now())
-}
-
-model OnboardingState {
-  id                   String   @id @default(cuid())
-  userId               String   @unique
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  profileCompleted     Boolean  @default(false)
-  firstCampaignCreated Boolean  @default(false)
-  firstLeadsAdded      Boolean  @default(false)
-  firstLeadsAnalyzed   Boolean  @default(false)
-  firstDraftGenerated  Boolean  @default(false)
-  firstDraftQueued     Boolean  @default(false)
-  firstSendCompleted   Boolean  @default(false)
-  dismissed            Boolean  @default(false)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-}
-
-model UserActionLog {
-  id         String   @id @default(cuid())
-  userId     String
-  actionType String
-  createdAt  DateTime @default(now())
-
-  @@index([userId, actionType, createdAt])
-  @@index([userId, createdAt])
-}
-
-model TestEmailLog {
-  id              String   @id @default(cuid())
-  userId          String?
-  user            User?    @relation(fields: [userId], references: [id])
-  recipientEmail  String
-  subject         String
-  status          String   @default("SENT")
-  provider        String?
-  reason          String?
-  realSend        Boolean  @default(false)
-  createdAt       DateTime @default(now())
-
-  @@index([userId])
-  @@index([createdAt])
-}
-
-model AIUsageLog {
-  id           String   @id @default(cuid())
-  provider     String
-  model        String
-  taskType     String
-  success      Boolean
-  errorMessage String?
-  userId       String?
-  user         User?    @relation(fields: [userId], references: [id])
-  createdAt    DateTime @default(now())
-
-  @@index([userId])
-  @@index([provider])
-  @@index([taskType])
-  @@index([createdAt])
 }
